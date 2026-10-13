@@ -179,9 +179,17 @@ function formatSheets_(ss) {
 
 function getRequiredSheet_(name) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (!ss) throw new Error('No active spreadsheet. Make sure this project is bound to your Google Sheet.');
-  const sheet = ss.getSheetByName(name);
-  if (!sheet) throw new Error('Sheet "' + name + '" is missing. Run setup from the Apps Script editor.');
+  if (!ss) throw new Error('No active spreadsheet. Open the target Google Sheet, then use Extensions > Apps Script and run setup().');
+  let sheet = ss.getSheetByName(name);
+  if (!sheet && name === SHEET_LEAVE_REQUESTS) {
+    // Self-heal this additive support tab if an older deployment missed setup().
+    sheet = ensureSheet_(ss, SHEET_LEAVE_REQUESTS, LEAVE_REQUEST_HEADERS, []);
+  }
+  if (!sheet && name === SHEET_NOTIFICATIONS) {
+    // Self-heal this additive support tab if an older deployment missed setup().
+    sheet = ensureSheet_(ss, SHEET_NOTIFICATIONS, NOTIFICATION_HEADERS, []);
+  }
+  if (!sheet) throw new Error('Sheet "' + name + '" is missing. Open the linked spreadsheet > Extensions > Apps Script, run setup(), then deploy a new version.');
   return sheet;
 }
 
