@@ -319,11 +319,15 @@
         const result = await callServer('getEmployeeToday', [id, pin]);
         if (!result.ok) {
           verifiedEmployee = null;
+          try { sessionStorage.removeItem('attendanceEmployeeSession'); } catch (storageError) {}
           document.getElementById('employeeProfile').classList.add('hidden');
           document.getElementById('attendanceActions').classList.add('hidden');
           showMessage('empMessage', result.message || 'Verification failed.', 'error'); return;
         }
         verifiedEmployee = {id:id, pin:pin, employee:result.employee, allowLogout:result.allowLogout};
+        try {
+          sessionStorage.setItem('attendanceEmployeeSession', JSON.stringify({id:id, pin:pin}));
+        } catch (storageError) { /* Browser storage may be disabled; login still works for this page. */ }
         document.getElementById('loginFields').classList.add('hidden');
         document.getElementById('employeeProfile').innerHTML = '<div class="profile"><div class="avatar">' + esc(result.employee.name.charAt(0).toUpperCase()) + '</div><div><strong>' + esc(result.employee.name) + '</strong><div class="muted small">' + esc(result.employee.id) + ' · ' + esc(result.employee.designation || result.employee.department) + '</div></div></div>';
         document.getElementById('employeeProfile').classList.remove('hidden');
@@ -352,6 +356,24 @@
         await Promise.all([loadDepartmentMembers(), loadAttendanceHistory(), loadMyRequests(), loadWFHStatus(), loadLeaveStatus(), loadEmployeeNotifications()]);
       } catch (err) { showMessage('empMessage', err.message, 'error'); }
       finally { setBusy(false); }
+    }
+
+    // Restore employee access after a refresh in the same browser tab.
+    // Credentials are kept in sessionStorage (cleared when the tab session ends), then revalidated server-side.
+    try {
+      const savedEmployeeSession = sessionStorage.getItem('attendanceEmployeeSession');
+      if (savedEmployeeSession) {
+        const saved = JSON.parse(savedEmployeeSession);
+        if (saved && saved.id && saved.pin) {
+          document.getElementById('empId').value = saved.id;
+          document.getElementById('empPin').value = saved.pin;
+          verifyEmployee();
+        } else {
+          sessionStorage.removeItem('attendanceEmployeeSession');
+        }
+      }
+    } catch (restoreError) {
+      try { sessionStorage.removeItem('attendanceEmployeeSession'); } catch (storageError) {}
     }
 
     async function loadAttendanceHistory() {
