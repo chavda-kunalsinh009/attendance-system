@@ -1284,3 +1284,7 @@ function markAdminNotificationRead(token, notificationId) {
     return {ok:false,message:'Notification not found.'};
   } catch(err) { return {ok:false,message:err.message || 'Could not update notification.'}; }
 }
+
+function authorizeAdminOtpEmail() {
+  return MailApp.getRemainingDailyQuota();
+}
