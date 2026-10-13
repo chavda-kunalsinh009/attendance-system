@@ -79,7 +79,13 @@
     .workspace-top .brand h1{font-size:16px}.workspace-top .logo{width:36px;height:36px}
     .workspace-greeting{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin:10px 0 22px}
     .workspace-greeting h2{font-size:26px;margin:0 0 8px;letter-spacing:-.04em}.workspace-greeting p{margin:0;color:#758198}
-    .workspace-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.9fr);gap:18px;align-items:start}
+    .workspace-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:18px;align-items:start}
+    .workspace-grid>div{display:contents}
+    .workspace-grid>div>section.card{display:none}
+    .workspace-grid>div>section.card.workspace-active{display:block;grid-column:1/-1}
+    .workspace-grid.overview-mode #attendance.workspace-active,.workspace-grid.overview-mode #department.workspace-active{grid-column:auto}
+    .workspace-grid.overview-mode #attendance.workspace-active{grid-column:1}
+    .workspace-grid.overview-mode #department.workspace-active{grid-column:2}
     .workspace-main .card{border:1px solid #edf0f5;box-shadow:0 3px 14px rgba(25,45,80,.035);padding:20px;margin-bottom:18px;border-radius:14px}
     .attendance-hero{background:linear-gradient(135deg,#087f79,#12a69a);color:white;border:0!important}
     .attendance-hero .muted,.attendance-hero p{color:#d9f5f1}.attendance-hero .btn{background:#fff;color:#087f79;border:0}
@@ -162,7 +168,9 @@
       '<a class="nav-item active" href="#overview" data-target="overview"><span class="nav-glyph"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"></path><path d="M5 9v12h14V9M9 21v-7h6v7"></path></svg></span><span>My Space</span></a>' +
       '<a class="nav-item" href="#attendance" data-target="attendance"><span class="nav-glyph"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><span>Attendance</span></a>' +
       '<a class="nav-item" href="#requests" data-target="requests"><span class="nav-glyph"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v5h5M10 13h5M10 17h5"></path></svg></span><span>My Requests</span></a>' +
-      '<a class="nav-item" href="#leaveSection" data-target="leaveSection"><span class="nav-glyph"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18M8 14h3"></path></svg></span><span>Leave</span></a>' +
+      '<a class="nav-item" href="#regularizationSection" data-target="regularizationSection"><span class="nav-glyph"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2"></path><circle cx="12" cy="12" r="9"></circle><path d="M8 3 6 5M16 3l2 2"></path></svg></span><span>Attendance Regularization</span></a>' +
+      '<a class="nav-item" href="#wfhSection" data-target="wfhSection"><span class="nav-glyph"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"></path><path d="M5 10v10h14V10M9 20v-6h6v6"></path></svg></span><span>Work From Home (WFH)</span></a>' +
+      '<a class="nav-item" href="#leaveSection" data-target="leaveSection"><span class="nav-glyph"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18M8 14h3"></path></svg></span><span>Leave Management</span></a>'
       '<a class="nav-item" href="#notificationsSection" data-target="notificationsSection"><span class="nav-glyph"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path></svg></span><span>Notifications</span></a>' +
       '<a class="nav-item" href="#department" data-target="department"><span class="nav-glyph"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 4v2"></path></svg></span><span>Department Members</span></a>' +
       '<a class="nav-item" href="#profile" data-target="profile"><span class="nav-glyph"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg></span><span>My Profile</span></a>' +
@@ -181,7 +189,8 @@
       '<div id="workTimer" class="work-timer"><div><div class="work-timer-label">Today’s live work timer</div><div class="work-timer-value" id="workTimerValue">00:00:00</div><div class="work-timer-meta" id="workTimerMeta">Open My Space, then check in to start your timer.</div></div><span class="timer-dot" id="workTimerDot"></span></div>' +
       '<div id="empMessage" class="notice hidden" role="status"></div><div id="todaySummary" class="notice">Sign in with your employee ID and PIN to view today’s attendance.</div><h3 style="margin:20px 0 8px;font-size:14px">Recent Attendance</h3><div id="attendanceHistory"><div class="notice">Verify your employee details to load attendance history.</div></div></section>' +
       '<section class="card" id="department"><div class="toolbar"><h2>Department Members</h2><span class="pill" id="departmentLabel">Your team</span></div><p class="muted small">Active colleagues in your department.</p><div id="departmentMembers"><div class="notice">Verify your employee details to load your department members.</div></div></section>' +
-      '<section class="card" id="requests"><h2>Attendance Regularization</h2><p class="muted small">Request a correction for missed or incorrect attendance. Admin approval is required.</p><div id="regMessage" class="notice hidden" role="status"></div><form id="regularizationForm"><label class="field"><span>Attendance Date</span><input id="regDate" name="date" type="date" required></label><label class="field"><span>Request Type</span><select id="regType" name="type" required><option>Missed Login / Check-in</option><option>Missed Logout / Check-out</option><option>Incorrect Attendance Time</option><option>Absent but Worked</option></select></label><label class="field"><span>Requested Login Time</span><input name="loginTime" type="time"></label><label class="field"><span>Requested Logout Time</span><input name="logoutTime" type="time"></label><label class="field"><span>Reason</span><input name="reason" required maxlength="500" placeholder="Explain why correction is needed"></label><button class="btn secondary full" type="submit">Submit Regularization Request</button></form></section>' +
+      '<section class="card" id="regularizationSection"><h2>Attendance Regularization</h2><p class="muted small">Request a correction for missed or incorrect attendance. Admin approval is required.</p><div id="regMessage" class="notice hidden" role="status"></div><form id="regularizationForm"><label class="field"><span>Attendance Date</span><input id="regDate" name="date" type="date" required></label><label class="field"><span>Request Type</span><select id="regType" name="type" required><option>Missed Login / Check-in</option><option>Missed Logout / Check-out</option><option>Incorrect Attendance Time</option><option>Absent but Worked</option></select></label><label class="field"><span>Requested Login Time</span><input name="loginTime" type="time"></label><label class="field"><span>Requested Logout Time</span><input name="logoutTime" type="time"></label><label class="field"><span>Reason</span><input name="reason" required maxlength="500" placeholder="Explain why correction is needed"></label><button class="btn secondary full" type="submit">Submit Regularization Request</button></form></section>' +
+      '<section class="card" id="requests"><h2>My Requests</h2><p class="muted small">Track the status and remarks for your attendance correction requests.</p><div id="myRequestsList"><div class="notice">Sign in to view your requests.</div></div></section>' +
       '<section class="card" id="wfhSection"><h2>Work From Home (WFH)</h2><p class="muted small">Submit a date-range request. WFH is enabled only after Admin approval.</p><div id="wfhMessage" class="notice hidden" role="status"></div><div id="wfhTodayStatus" class="notice">Sign in to check your approved work mode.</div><form id="wfhForm"><div class="settings-grid"><label class="field"><span>Start Date</span><input id="wfhStartDate" name="startDate" type="date" required></label><label class="field"><span>End Date</span><input id="wfhEndDate" name="endDate" type="date" required></label></div><label class="field"><span>Reason for WFH</span><input name="reason" maxlength="500" minlength="5" required placeholder="Explain why you need to work from home"></label><button class="btn secondary full" type="submit">Submit WFH Request</button></form><h3 style="margin:20px 0 8px;font-size:14px">My WFH Requests</h3><div id="myWFHRequests"><div class="notice">Sign in to view your WFH requests.</div></div></section>' +
       '<section class="card" id="leaveSection"><h2>Leave Management</h2><p class="muted small">Request leave and track approval status. Attendance changes only after Admin approval.</p><div id="leaveMessage" class="notice hidden" role="status"></div><form id="leaveForm"><label class="field"><span>Leave Type</span><select name="leaveType" required><option>Casual Leave</option><option>Sick Leave</option><option>Earned Leave</option><option>Unpaid Leave</option><option>Other</option></select></label><div class="settings-grid"><label class="field"><span>Start Date</span><input id="leaveStartDate" name="startDate" type="date" required></label><label class="field"><span>End Date</span><input id="leaveEndDate" name="endDate" type="date" required></label></div><label class="field"><span>Reason</span><input name="reason" maxlength="500" minlength="5" required placeholder="Reason for leave"></label><button class="btn secondary full" type="submit">Submit Leave Request</button></form><h3 style="margin:20px 0 8px;font-size:14px">My Leave Requests</h3><div id="myLeaveRequests"><div class="notice">Sign in to view leave requests.</div></div></section>' +
       '<section class="card" id="notificationsSection"><h2>Notifications <span class="pill" id="notificationCount">0 unread</span></h2><p class="muted small">Updates about your WFH and leave requests.</p><div id="employeeNotifications"><div class="notice">Sign in to view notifications.</div></div></section>'
@@ -199,8 +208,41 @@
     let verifiedEmployee = null;
     let workTimerInterval = null;
     document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:CONFIG.timeZone||'Asia/Kolkata'});
-    document.querySelectorAll('.workspace-nav .nav-item[data-target]').forEach(function(link){ link.addEventListener('click', function(ev){ ev.preventDefault(); var targetId=link.getAttribute('data-target'); var target=document.getElementById(targetId); if(target){ document.querySelectorAll('.workspace-nav .nav-item').forEach(function(item){item.classList.toggle('active',item===link);}); target.scrollIntoView({behavior:'smooth',block:'start'}); try{history.replaceState(null,'','#'+targetId);}catch(e){} } }); });
-    document.querySelectorAll('.quick-link[href^="#"]').forEach(function(link){ link.addEventListener('click',function(ev){ev.preventDefault();var target=document.getElementById(link.getAttribute('href').slice(1));if(target)target.scrollIntoView({behavior:'smooth',block:'start'});}); });
+    function setWorkspacePage(pageId) {
+      const grid = document.querySelector('.workspace-grid');
+      if (!grid) return;
+      grid.classList.toggle('overview-mode', pageId === 'overview');
+      grid.querySelectorAll('section.card').forEach(function(card) { card.classList.remove('workspace-active'); });
+      if (pageId === 'overview') {
+        ['attendance','department'].forEach(function(id) {
+          const card = document.getElementById(id);
+          if (card) card.classList.add('workspace-active');
+        });
+      } else {
+        const selected = document.getElementById(pageId);
+        if (selected && grid.contains(selected)) selected.classList.add('workspace-active');
+      }
+      const greeting = document.getElementById('overview');
+      if (greeting) greeting.classList.toggle('hidden', pageId !== 'overview');
+      document.querySelectorAll('.workspace-nav .nav-item[data-target]').forEach(function(item) {
+        item.classList.toggle('active', item.getAttribute('data-target') === pageId);
+      });
+      try { history.replaceState(null, '', '#' + pageId); } catch (e) {}
+    }
+    document.querySelectorAll('.workspace-nav .nav-item[data-target]').forEach(function(link) {
+      link.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        setWorkspacePage(link.getAttribute('data-target'));
+      });
+    });
+    document.querySelectorAll('.quick-link[href^="#"]').forEach(function(link) {
+      link.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        const targetId = link.getAttribute('href').slice(1);
+        setWorkspacePage(targetId === 'attendance' ? 'attendance' : targetId === 'requests' ? 'requests' : targetId);
+      });
+    });
+    setWorkspacePage('overview');
     loadHolidays();
     document.getElementById('checkBtn').addEventListener('click', verifyEmployee);
     document.getElementById('loginBtn').addEventListener('click', function(){ attendanceAction('login'); });
