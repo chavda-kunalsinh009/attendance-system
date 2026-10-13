@@ -1311,7 +1311,7 @@ function getDailyGoals(employeeId, pin, date) {
     if (!employee || String(employee.status).toLowerCase() === 'inactive') return {ok:false,message:'Employee not found or inactive.'};
     const settings = getSettingsSafe_();
     if (settings.requirePin && clean_(pin) !== employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
-    const day = /^\\d{4}-\\d{2}-\\d{2}$/.test(clean_(date)) ? clean_(date) : today_();
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(clean_(date)) ? clean_(date) : today_();
     const values = getRequiredSheet_(SHEET_DAILY_GOALS).getDataRange().getDisplayValues();
     const goals = [];
     for (let i=1;i<values.length;i++) {
@@ -1330,7 +1330,7 @@ function saveDailyGoal(employeeId, pin, goalText, date) {
     const settings=getSettingsSafe_();
     if (settings.requirePin && clean_(pin)!==employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
     const day=clean_(date) || today_(), goal=clean_(goalText);
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(day) || day!==today_()) return {ok:false,message:'Goals can only be added for today.'};
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day!==today_()) return {ok:false,message:'Goals can only be added for today.'};
     if (!goal || goal.length<3 || goal.length>160) return {ok:false,message:'Enter a goal between 3 and 160 characters.'};
     lock.waitLock(10000);
     const sheet=getRequiredSheet_(SHEET_DAILY_GOALS), values=sheet.getDataRange().getDisplayValues();
