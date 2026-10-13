@@ -79,6 +79,19 @@
     .workspace-top .brand h1{font-size:16px}.workspace-top .logo{width:36px;height:36px}
     .workspace-greeting{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin:10px 0 22px}
     .workspace-greeting h2{font-size:26px;margin:0 0 8px;letter-spacing:-.04em}.workspace-greeting p{margin:0;color:#758198}
+
+    /* My Space daily inspiration cards */
+    .daily-boost{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin:0 0 22px}
+    .boost-card{min-width:0;background:#fff;border:1px solid #e7eaf4;border-radius:14px;padding:17px 18px;box-shadow:0 3px 14px rgba(25,45,80,.035)}
+    .boost-card .boost-eyebrow{display:flex;align-items:center;gap:7px;color:#6366f1;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px}
+    .boost-card h3{font-size:14px;line-height:1.45;margin:0 0 7px;color:#172033}
+    .boost-card p{font-size:12px;line-height:1.6;color:#64748b;margin:0}
+    .boost-card.quote-card{background:linear-gradient(135deg,#EEF2FF,#F8FAFF);border-color:#DDE3FF}
+    .boost-card.quote-card h3{font-size:15px;color:#312E81}
+    .boost-card .boost-foot{font-size:11px;color:#6366f1;font-weight:700;margin-top:10px}
+    @media(max-width:1050px){.daily-boost{grid-template-columns:1fr 1fr}.daily-boost .quote-card{grid-column:1/-1}}
+    @media(max-width:600px){.daily-boost{grid-template-columns:1fr}.daily-boost .quote-card{grid-column:auto}.workspace-main{padding:14px}}
+
     .workspace-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:18px;align-items:start}
     .workspace-grid>div{display:contents}
     .workspace-grid>div>section.card{display:none}
@@ -252,6 +265,11 @@
       '<div style="margin-top:auto;padding:12px;color:#9aa3b2;font-size:11px">' + esc(CONFIG.businessName || 'Employee Portal') + '</div></aside>' +
       '<section class="workspace-main"><header class="workspace-top">' + header(false) + '<div class="pill">● Employee Portal</div></header>' +
       '<div class="workspace-greeting" id="overview"><div><h2 id="welcomeTitle">Welcome to My Space</h2><p id="welcomeSub">Your workday, attendance and team — all in one place.</p></div><div class="pill" id="todayDate"></div></div>' +
+      '<section class="daily-boost" id="dailyBoost" aria-label="Daily motivation and tips">' +
+      '<article class="boost-card quote-card"><div class="boost-eyebrow">✨ Daily motivation</div><h3 id="dailyQuoteText">Small progress every day adds up to big results.</h3><div class="boost-foot" id="dailyQuoteAuthor">Your daily reminder</div></article>' +
+      '<article class="boost-card"><div class="boost-eyebrow">🎯 Today’s focus</div><h3>Finish your most important task first.</h3><p>Choose one priority, give it your attention, and make steady progress before switching tasks.</p></article>' +
+      '<article class="boost-card"><div class="boost-eyebrow">💡 Daily learning tip</div><h3 id="dailyLearningTitle">Learn one thing. Apply it today.</h3><p id="dailyLearningText">Small, consistent learning can improve your skills over time.</p></article>' +
+      '</section>' +
       '<div class="workspace-grid"><div>' +
       '<section class="card attendance-hero" id="attendance"><h2>Attendance</h2><p>Record your workday check-in and check-out.</p>' +
       '<div id="employeeProfile" class="hidden"></div>' +
@@ -281,7 +299,45 @@
 
     let verifiedEmployee = null;
     let workTimerInterval = null;
-    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:CONFIG.timeZone||'Asia/Kolkata'});
+    const localToday = new Date(new Date().toLocaleString('en-US', {timeZone:CONFIG.timeZone||'Asia/Kolkata'}));
+    document.getElementById('todayDate').textContent = localToday.toLocaleDateString('en-IN', {weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:CONFIG.timeZone||'Asia/Kolkata'});
+    const dailyQuotes = [
+      {text:'Small progress every day adds up to big results.',author:'Consistency matters'},
+      {text:'Focus on progress, not perfection.',author:'Keep moving forward'},
+      {text:'The secret of getting ahead is getting started.',author:'Mark Twain'},
+      {text:'Great work is built one thoughtful step at a time.',author:'Your daily reminder'},
+      {text:'Do what you can, with what you have, where you are.',author:'Theodore Roosevelt'},
+      {text:'A little improvement each day adds up over time.',author:'Your daily reminder'},
+      {text:'Your future is created by what you do today.',author:'Your daily reminder'}
+    ];
+    const quote = dailyQuotes[Math.floor(Date.now() / 86400000) % dailyQuotes.length];
+    document.getElementById('dailyQuoteText').textContent = '“' + quote.text + '”';
+    document.getElementById('dailyQuoteAuthor').textContent = quote.author;
+    function setDailyLearningTip(employee) {
+      const department = String((employee && employee.department) || '').toLowerCase();
+      const designation = String((employee && employee.designation) || '').toLowerCase();
+      let title = 'Learn one thing. Apply it today.';
+      let tip = 'Take a few minutes to learn a useful skill, then apply it to a real task.';
+      if (/seo|market|content|digital/.test(department + ' ' + designation)) {
+        title = 'SEO tip: match content to search intent.';
+        tip = 'Before optimizing a page, check what searchers want to achieve and make sure the page answers that need clearly.';
+      } else if (/develop|engineer|software|it\b/.test(department + ' ' + designation)) {
+        title = 'Development tip: make small, testable changes.';
+        tip = 'A focused change with a clear test is easier to review, debug, and maintain.';
+      } else if (/design|creative|ui|ux/.test(department + ' ' + designation)) {
+        title = 'Design tip: clarity beats decoration.';
+        tip = 'Make the primary action obvious, keep visual hierarchy consistent, and check the experience on mobile.';
+      } else if (/sales|business development/.test(department + ' ' + designation)) {
+        title = 'Sales tip: ask one more useful question.';
+        tip = 'Understanding the customer’s actual goal helps you recommend a solution that fits their needs.';
+      } else if (/hr|human resource|people/.test(department + ' ' + designation)) {
+        title = 'People tip: communicate expectations clearly.';
+        tip = 'Clear next steps and timelines reduce confusion and make collaboration smoother.';
+      }
+      document.getElementById('dailyLearningTitle').textContent = title;
+      document.getElementById('dailyLearningText').textContent = tip;
+    }
+    setDailyLearningTip(null);
     function setWorkspacePage(pageId) {
       const grid = document.querySelector('.workspace-grid');
       if (!grid) return;
@@ -298,6 +354,8 @@
       }
       const greeting = document.getElementById('overview');
       if (greeting) greeting.classList.toggle('hidden', pageId !== 'overview');
+      const dailyBoost = document.getElementById('dailyBoost');
+      if (dailyBoost) dailyBoost.classList.toggle('hidden', pageId !== 'overview');
       document.querySelectorAll('.workspace-nav .nav-item[data-target]').forEach(function(item) {
         item.classList.toggle('active', item.getAttribute('data-target') === pageId);
       });
@@ -369,6 +427,7 @@
         document.getElementById('logoutBtn').classList.toggle('hidden', !result.allowLogout);
         document.getElementById('welcomeTitle').textContent = 'Good day, ' + result.employee.name.split(' ')[0];
         document.getElementById('welcomeSub').textContent = (result.employee.designation || 'Team Member') + (result.employee.department ? ' · ' + result.employee.department : '') + ' — here is your workday overview.';
+        setDailyLearningTip(result.employee);
         document.getElementById('profileDetails').innerHTML = '<div class="profile-details-head"><div class="profile-details-avatar">' + esc((result.employee.name || 'E').charAt(0).toUpperCase()) + '</div><div><strong>' + esc(result.employee.name || 'Employee') + '</strong><div class="muted small">Verified employee profile</div></div></div><div class="profile-details-grid"><div class="profile-field"><span>Employee ID</span><strong>' + esc(result.employee.id || '—') + '</strong></div><div class="profile-field"><span>Designation</span><strong>' + esc(result.employee.designation || '—') + '</strong></div><div class="profile-field"><span>Department</span><strong>' + esc(result.employee.department || '—') + '</strong></div></div>';
         const record = result.record;
         const liveStatus = document.getElementById('employeeLiveStatus');
