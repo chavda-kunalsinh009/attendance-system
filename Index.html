@@ -760,8 +760,20 @@
   function renderAdmin() {
     app.innerHTML = '<main class="shell">' + header(true) + '<section id="adminBoot" class="card admin-boot" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><h2>Checking secure session</h2><p class="muted">Please wait while we verify your admin access. Dashboard data will appear only after verification.</p></section><section id="loginPanel" class="card hidden" style="max-width:460px;margin:18px auto"><h2>Admin sign in</h2><p class="muted">Enter the Admin PIN to open the attendance dashboard.</p><label class="field"><span>Admin PIN / password</span><input id="adminPin" type="password" placeholder="Enter Admin PIN" autocomplete="current-password"></label><button class="btn primary full" id="adminLoginBtn">Sign in</button><button class="btn secondary full" id="showPinRecovery" type="button" style="margin-top:10px">Forgot Admin PIN?</button><div id="loginMessage" class="notice hidden" role="status"></div><section id="pinRecovery" class="hidden" style="margin-top:18px;border-top:1px solid #e2e8f0;padding-top:16px"><h3>Recover Admin PIN</h3><p class="muted small">An OTP will be sent to the registered Admin Email configured in Settings.</p><label class="field"><span>Registered admin email</span><input id="recoveryEmail" type="email" autocomplete="email" required></label><button class="btn secondary full" id="sendRecoveryOtp" type="button">Send OTP</button><label class="field"><span>6-digit OTP</span><input id="recoveryOtp" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label><label class="field"><span>New Admin PIN / password (8+ characters)</span><input id="recoveryNewPin" type="password" minlength="8" autocomplete="new-password"></label><button class="btn primary full" id="resetAdminPinBtn" type="button">Verify OTP & Reset PIN</button><div id="recoveryMessage" class="notice hidden" role="status"></div></section><p class="muted small" style="margin-top:16px"><a href="./">Back to Employee Portal</a></p></section><section id="adminPanel" class="hidden"><div class="admin-actions"><button id="logoutAdmin" type="button" aria-label="Sign out of admin account"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg> Sign Out</button></div><div class="admin-tabs"><button class="active" data-tab="dashboard">Dashboard</button><button data-tab="employees">Employees</button><button data-tab="settings">Settings</button><button data-tab="regularization">Regularization</button><button data-tab="wfh">WFH & Schedules</button><button data-tab="leave">Leave Requests</button><button data-tab="reports">Monthly Reports</button><button data-tab="notifications">Notifications</button></div><div id="adminContent"></div></section><div class="foot">Admin session expires after 30 minutes of inactivity.</div></main>';
     let token = '';
+    let activeAdminTab = '';
+    let dashboardRefreshInFlight = false;
     try { token = sessionStorage.getItem('attendance_admin_token') || ''; } catch (e) { token = ''; }
     document.getElementById('adminLoginBtn').addEventListener('click', login);
+    // Poll the active Admin Dashboard every 30 seconds so Google Sheet edits appear automatically.
+    // Pause while the tab is hidden, and never refresh over another in-flight dashboard request.
+    window.setInterval(async function() {
+      if (!token || activeAdminTab !== 'dashboard' || document.visibilityState === 'hidden' || dashboardRefreshInFlight) return;
+      const dateInput = document.getElementById('dashDate');
+      if (!dateInput) return;
+      dashboardRefreshInFlight = true;
+      try { await loadDashboardForDate(dateInput.value, true); }
+      finally { dashboardRefreshInFlight = false; }
+    }, 30000);
     document.getElementById('showPinRecovery').addEventListener('click',function(){document.getElementById('pinRecovery').classList.toggle('hidden');});
     document.getElementById('sendRecoveryOtp').addEventListener('click',async function(){
       const email=document.getElementById('recoveryEmail').value.trim();
@@ -859,6 +871,7 @@
       finally { document.getElementById('adminLoginBtn').disabled = false; }
     }
     async function activateTab(tab) {
+      activeAdminTab = tab;
       document.querySelectorAll('[data-tab]').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
       const target = document.getElementById('adminContent');
       target.innerHTML = '<div class="card">Loading…</div>';
@@ -887,19 +900,24 @@
         document.getElementById('dashDate').addEventListener('change', function(){ loadDashboardForDate(this.value); });
       } catch(err) { target.innerHTML = '<div class="card notice error">'+esc(err.message)+'</div>'; }
     }
-    async function loadDashboardForDate(date) {
+    async function loadDashboardForDate(date, silent) {
       const target = document.getElementById('adminContent');
-      target.innerHTML = '<div class="card">Loading…</div>';
+      if (!silent) target.innerHTML = '<div class="card">Loading…</div>';
       try {
         const d = await callServer('getDashboard',[token,date]);
-        if (!d.ok) { target.innerHTML = '<div class="card notice error">'+esc(d.message || 'Could not load dashboard.')+'</div>'; return; }
-        // Reuse dashboard rendering by placing selected date into the date input through a tiny local renderer.
+        if (!d.ok) {
+          if (!silent) target.innerHTML = '<div class="card notice error">'+esc(d.message || 'Could not load dashboard.')+'</div>';
+          return;
+        }
+        // Keep the existing dashboard visible during background polling; update it only after fresh data arrives.
         renderDashboardData(d);
-      } catch(err) { target.innerHTML = '<div class="card notice error">'+esc(err.message)+'</div>'; }
+      } catch(err) {
+        if (!silent) target.innerHTML = '<div class="card notice error">'+esc(err.message)+'</div>';
+      }
     }
     function renderDashboardData(d) {
       const target = document.getElementById('adminContent');
-      target.innerHTML = '<section class="card"><div class="dashboard-intro"><div><h2>Attendance overview</h2><p>Monitor daily attendance, punctuality and working hours from one place.</p></div><div class="dashboard-toolbar"><input aria-label="Attendance date" type="date" id="dashDate" value="'+esc(d.date)+'"><button class="btn secondary" id="refreshDash" type="button">Refresh data</button></div></div><div class="stats">'+stat('Total employees',d.kpi.total)+stat('Present',d.kpi.present)+stat('Late arrivals',d.kpi.late)+stat('Absent',d.kpi.absent)+'</div><div class="stats">'+stat('Half day',d.kpi.halfDay)+stat('On leave',d.kpi.leave)+stat('Attendance rate',d.kpi.attendanceRate+'%')+stat('Report date',d.date)+'</div><div class="section-heading"><h3>Employee attendance</h3><span class="muted small">'+d.daily.length+' employee records</span></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Clock in</th><th>Clock out</th><th>Hours</th><th>Status</th></tr></thead><tbody>'+d.daily.map(function(r){return '<tr><td><strong class="employee-primary">'+esc(r.name)+'</strong><br><span class="employee-secondary">'+esc(r.employeeId)+(r.designation?' · '+esc(r.designation):'')+'</span></td><td>'+esc(r.department||'—')+'</td><td>'+esc(r.loginTime||'—')+'</td><td>'+esc(r.logoutTime||'—')+'</td><td><strong>'+esc(r.hours||0)+'</strong></td><td><span class="status '+statusClass(r.status)+'">'+esc(r.status)+'</span></td></tr>';}).join('')+'</tbody></table></div></section>';
+      target.innerHTML = '<section class="card"><div class="dashboard-intro"><div><h2>Attendance overview</h2><p>Monitor daily attendance, punctuality and working hours from one place.</p></div><div class="dashboard-toolbar"><input aria-label="Attendance date" type="date" id="dashDate" value="'+esc(d.date)+'"><button class="btn secondary" id="refreshDash" type="button">Refresh now</button><span class="muted small" title="Dashboard data is reloaded from Google Sheets every 30 seconds">● Live sync · 30 sec</span></div></div><div class="stats">'+stat('Total employees',d.kpi.total)+stat('Present',d.kpi.present)+stat('Late arrivals',d.kpi.late)+stat('Absent',d.kpi.absent)+'</div><div class="stats">'+stat('Half day',d.kpi.halfDay)+stat('On leave',d.kpi.leave)+stat('Attendance rate',d.kpi.attendanceRate+'%')+stat('Report date',d.date)+'</div><div class="section-heading"><h3>Employee attendance</h3><span class="muted small">'+d.daily.length+' employee records</span></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Clock in</th><th>Clock out</th><th>Hours</th><th>Status</th></tr></thead><tbody>'+d.daily.map(function(r){return '<tr><td><strong class="employee-primary">'+esc(r.name)+'</strong><br><span class="employee-secondary">'+esc(r.employeeId)+(r.designation?' · '+esc(r.designation):'')+'</span></td><td>'+esc(r.department||'—')+'</td><td>'+esc(r.loginTime||'—')+'</td><td>'+esc(r.logoutTime||'—')+'</td><td><strong>'+esc(r.hours||0)+'</strong></td><td><span class="status '+statusClass(r.status)+'">'+esc(r.status)+'</span></td></tr>';}).join('')+'</tbody></table></div></section>';
       document.getElementById('refreshDash').addEventListener('click',function(){loadDashboardForDate(document.getElementById('dashDate').value);});
       document.getElementById('dashDate').addEventListener('change',function(){loadDashboardForDate(this.value);});
     }
