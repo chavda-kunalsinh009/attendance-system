@@ -124,6 +124,51 @@
 
     @media(max-width:980px){.workspace-shell{grid-template-columns:190px minmax(0,1fr)}.workspace-main{padding:18px}.workspace-grid{grid-template-columns:1fr}}
     @media(max-width:680px){.shell:has(.workspace-shell){padding:0}.workspace-shell{grid-template-columns:1fr}.workspace-nav{border-right:0;border-bottom:1px solid #e7ebf2;padding:10px;display:flex;flex-direction:row;overflow:auto}.workspace-nav .nav-title{display:none}.workspace-nav .nav-item{white-space:nowrap;padding:10px}.workspace-main{padding:12px}.workspace-greeting{display:block}.workspace-greeting h2{font-size:22px}.workspace-top{padding:12px}.member-list{grid-template-columns:1fr}.workspace-nav .nav-item span:last-child{font-size:12px}}
+  
+    /* Premium enterprise palette: midnight navy, deep teal and warm neutral surfaces */
+    :root{--brand:#0f766e;--brand-soft:#e6f4f1;--ink:#102033;--text:#34465a;--muted:#64748b;--line:#dbe4eb;--bg:#f3f6f8;--card:#ffffff;--ok:#15803d;--bad:#b91c1c;--radius:16px;--shadow:0 8px 28px rgba(16,32,51,.065)}
+    body{background:#f3f6f8;color:#102033}
+    .topbar,.workspace-top{border:1px solid #e1e8ee;box-shadow:0 5px 20px rgba(16,32,51,.045)}
+    .pill{background:#e6f4f1;color:#0f766e}
+    .primary,.admin-tabs button.active,#adminPanel .admin-tabs button.active{background:#0f766e;color:#fff}
+    .primary:hover{background:#115e59}
+    .secondary{background:#e6f4f1;color:#0f766e}
+    .workspace-nav{background:#102033;border-right:1px solid #1b344a}
+    .workspace-nav .nav-title{color:#91a5b8}
+    .workspace-nav .nav-item{color:#d4e0e9}
+    .workspace-nav .nav-item.active,.workspace-nav .nav-item:hover{background:#1d3b4b;color:#8ee0d2}
+    .workspace-nav .nav-item.active .nav-glyph{color:#8ee0d2}
+    .workspace-main{background:#f3f6f8}
+    .workspace-top,.workspace-shell .card{border-color:#e1e8ee}
+    .workspace-greeting{background:linear-gradient(120deg,#102033,#164653);color:#fff;box-shadow:0 8px 24px rgba(16,32,51,.12)}
+    .workspace-greeting p{color:#d4e4eb}
+    .workspace-greeting .pill{background:rgba(255,255,255,.13);color:#fff;border:1px solid rgba(255,255,255,.18)}
+    .attendance-hero{background:linear-gradient(145deg,#123c45,#0f766e)!important;box-shadow:0 12px 30px rgba(15,118,110,.18)}
+    .attendance-hero h2{color:#fff}
+    .workspace-shell .card{box-shadow:0 6px 22px rgba(16,32,51,.045)}
+    .profile-details-card{margin-top:16px;padding:16px;border:1px solid #dce6ed;border-radius:14px;background:linear-gradient(180deg,#fff,#f8fbfc);box-shadow:0 5px 16px rgba(16,32,51,.045);min-height:150px}
+    .profile-details-head{display:flex;align-items:center;gap:12px;padding-bottom:15px;border-bottom:1px solid #e7edf2}
+    .profile-details-avatar{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:14px;background:#dff3ee;color:#0f766e;font-size:20px;font-weight:900}
+    .profile-details-head strong{display:block;font-size:16px;color:#102033;margin-bottom:4px}
+    .profile-details-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+    .profile-field{padding:11px 12px;border:1px solid #e2eaf0;border-radius:10px;background:#fff;min-width:0}
+    .profile-field span{display:block;color:#64748b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+    .profile-field strong{display:block;color:#102033;font-size:13px;font-weight:800;overflow-wrap:anywhere}
+    .profile-empty{display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:#64748b;line-height:1.5}
+    .profile-empty strong{color:#102033;font-size:14px}
+    .profile-empty-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#e6f4f1;color:#0f766e;font-size:23px;font-weight:800}
+    .attendance-hero .employee-live-card{background:#fff!important;border:2px solid #8ee0d2!important;box-shadow:0 8px 22px rgba(4,25,30,.22)!important;padding:15px 16px!important}
+    .attendance-hero .employee-live-avatar{background:#dff3ee!important;color:#0f766e!important;border:1px solid #c5e9e1}
+    .attendance-hero .employee-live-info strong{color:#102033!important;font-size:16px!important;font-weight:900!important;letter-spacing:0!important}
+    .attendance-hero .employee-live-info .employee-live-meta{color:#33465a!important;font-size:12px!important;font-weight:750!important;line-height:1.6}
+    .attendance-hero .employee-live-status{background:#dcfce7!important;color:#166534!important;border-color:#bbf7d0!important}
+    .attendance-hero .employee-live-status.is-out{background:#f1f5f9!important;color:#334155!important;border-color:#cbd5e1!important}
+    .attendance-hero .employee-live-status .status-light{background:#16a34a!important}
+    .attendance-hero .employee-live-status.is-out .status-light{background:#64748b!important}
+    .workspace-shell .profile{background:#f8fbfc;border-color:#dbe7ed}
+    input:focus,select:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.14)}
+    @media(max-width:800px){.workspace-shell{grid-template-columns:1fr}.workspace-nav{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:12px}.workspace-nav .nav-title{grid-column:1/-1;padding:8px 10px}.workspace-nav>div:last-child{display:none}.workspace-main{padding:14px}.profile-details-grid{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -198,7 +243,7 @@
       '<section class="card" id="notificationsSection"><h2>Notifications <span class="pill" id="notificationCount">0 unread</span></h2><p class="muted small">Updates about your WFH and leave requests.</p><div id="employeeNotifications"><div class="notice">Sign in to view notifications.</div></div></section>' +
       '</div><div>' +
       '<section class="card"><h2>My Action Items</h2><p class="muted small">Keep your attendance and employee details up to date.</p><div class="member-item"><div class="avatar">◷</div><div><strong>Attendance for today</strong><div class="muted">Check in when your workday starts.</div></div></div><div class="member-item" style="margin-top:10px"><div class="avatar">✓</div><div><strong>Profile details</strong><div class="muted">Contact HR if your details need updating.</div></div></div></section>' +
-      '<section class="card" id="profile"><h2>My Profile</h2><div class="muted small">Your employee details appear after verification.</div><div id="profileDetails" class="notice">Not signed in</div></section>' +
+      '<section class="card" id="profile"><h2>My Profile</h2><div class="muted small">Your employee details appear after verification.</div><div id="profileDetails" class="profile-details-card"><div class="profile-empty"><span class="profile-empty-icon">◎</span><strong>Profile not loaded yet</strong><span>Verify your Employee ID and PIN in Attendance to view your details here.</span></div></div></section>' +
       '<section class="card" id="holidays"><div class="toolbar"><h2>Holidays</h2><span class="pill">Company calendar</span></div><p class="muted small">Upcoming and published holidays.</p><div id="holidayList"><div class="notice">Loading holidays…</div></div></section>' +
       '<section class="card quick-links-card" aria-labelledby="quickLinksTitle"><h2 id="quickLinksTitle">Quick Links</h2><p class="quick-links-intro">Jump straight to the tools you use most.</p><div class="quick-links-list">' +
       '<a class="quick-link" href="#attendance"><span class="quick-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><span class="quick-link-copy"><strong>Attendance</strong><span>Check in or check out</span></span><span class="quick-link-arrow" aria-hidden="true">›</span></a>' +
@@ -293,7 +338,7 @@
         document.getElementById('logoutBtn').classList.toggle('hidden', !result.allowLogout);
         document.getElementById('welcomeTitle').textContent = 'Good day, ' + result.employee.name.split(' ')[0];
         document.getElementById('welcomeSub').textContent = (result.employee.designation || 'Team Member') + (result.employee.department ? ' · ' + result.employee.department : '') + ' — here is your workday overview.';
-        document.getElementById('profileDetails').innerHTML = '<strong>' + esc(result.employee.name) + '</strong><br>Employee ID: ' + esc(result.employee.id) + '<br>Designation: ' + esc(result.employee.designation || '—') + '<br>Department: ' + esc(result.employee.department || '—');
+        document.getElementById('profileDetails').innerHTML = '<div class="profile-details-head"><div class="profile-details-avatar">' + esc((result.employee.name || 'E').charAt(0).toUpperCase()) + '</div><div><strong>' + esc(result.employee.name || 'Employee') + '</strong><div class="muted small">Verified employee profile</div></div></div><div class="profile-details-grid"><div class="profile-field"><span>Employee ID</span><strong>' + esc(result.employee.id || '—') + '</strong></div><div class="profile-field"><span>Designation</span><strong>' + esc(result.employee.designation || '—') + '</strong></div><div class="profile-field"><span>Department</span><strong>' + esc(result.employee.department || '—') + '</strong></div></div>';
         const record = result.record;
         const liveStatus = document.getElementById('employeeLiveStatus');
         const liveStatusText = document.getElementById('employeeLiveStatusText');
