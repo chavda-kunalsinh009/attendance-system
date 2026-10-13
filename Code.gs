@@ -111,10 +111,11 @@ function setup() {
   ensureSheet_(ss, SHEET_WFH_REQUESTS, WFH_REQUEST_HEADERS, []);
   ensureSheet_(ss, SHEET_LEAVE_REQUESTS, LEAVE_REQUEST_HEADERS, []);
   ensureSheet_(ss, SHEET_NOTIFICATIONS, NOTIFICATION_HEADERS, []);
+  ensureSheet_(ss, SHEET_AUDIT, ['Timestamp', 'Actor', 'Event', 'Details'], []);
   ensureAttendanceModeColumns_();
   formatSheets_(ss);
   SpreadsheetApp.getUi().alert(
-    'Setup completed.\n\nTabs created/checked: Employees, Attendance_Log, Settings, Holidays, Regularization_Requests, Work_Schedules, WFH_Requests, Leave_Requests, Notifications.\nDefault Admin PIN: 2468\nDemo employee PIN: 1111\nChange these before using the system.'
+    'Setup completed.\n\nTabs created/checked: Employees, Attendance_Log, Settings, Holidays, Regularization_Requests, Work_Schedules, WFH_Requests, Leave_Requests, Notifications, Admin_Audit_Log.\nDefault Admin PIN: 2468\nDemo employee PIN: 1111\nChange these before using the system.'
   );
 }
 
@@ -513,7 +514,12 @@ function requestAdminPinReset(email) {
   props.setProperty('ADMIN_OTP_EXPIRES', String(now + 10 * 60 * 1000));
   props.setProperty('ADMIN_OTP_ATTEMPTS', '0');
   props.setProperty('ADMIN_OTP_LAST_SENT', String(now));
-  MailApp.sendEmail({to: adminEmail, subject:'Attendance Portal Admin PIN reset code', body:'Your Attendance Portal Admin PIN reset code is: ' + otp + '\n\nThis code expires in 10 minutes and can be used once. If you did not request this, ignore this email.'});
+  try {
+    MailApp.sendEmail({to: adminEmail, subject:'Attendance Portal Admin PIN reset code', body:'Your Attendance Portal Admin PIN reset code is: ' + otp + '\n\nThis code expires in 10 minutes and can be used once. If you did not request this, ignore this email.'});
+  } catch (mailError) {
+    ['ADMIN_OTP_SALT','ADMIN_OTP_HASH','ADMIN_OTP_EMAIL','ADMIN_OTP_EXPIRES','ADMIN_OTP_ATTEMPTS','ADMIN_OTP_LAST_SENT'].forEach(function(key) { props.deleteProperty(key); });
+    return {ok:false, message:'Email could not be sent. Open Apps Script, select authorizeAdminOtpEmail_, click Run, and approve the requested email permission. Then try again.'};
+  }
   writeAuditLog_('Admin Email', 'Admin PIN OTP requested', 'OTP issued; code not logged');
   return generic;
 }
