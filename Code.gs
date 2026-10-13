@@ -500,7 +500,15 @@ function adminLogin(pin) {
 }
 
 /** Run manually once in the Apps Script editor to grant MailApp authorization before enabling OTP recovery. */
-function authorizeAdminOtpEmail_() { return MailApp.getRemainingDailyQuota(); }
+/**
+ * Run once from the Apps Script editor to trigger Google's MailApp authorization prompt.
+ * After running, open the execution log's authorization link and approve the send-mail scope.
+ */
+function authorizeAdminOtpEmail_() {
+  const remainingQuota = MailApp.getRemainingDailyQuota();
+  Logger.log('MailApp authorization successful. Remaining daily recipient quota: ' + remainingQuota);
+  return remainingQuota;
+}
 
 /** Sends a short-lived OTP only to the configured Admin Email. Response is generic to avoid email enumeration. */
 function requestAdminPinReset(email) {
@@ -1285,6 +1293,7 @@ function markAdminNotificationRead(token, notificationId) {
   } catch(err) { return {ok:false,message:err.message || 'Could not update notification.'}; }
 }
 
-function authorizeAdminOtpEmail() {
-  return MailApp.getRemainingDailyQuota();
+/** Friendly-name alias for editors where the trailing-underscore function is hard to locate. */
+function testEmailPermission() {
+  return authorizeAdminOtpEmail_();
 }
