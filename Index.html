@@ -1002,20 +1002,14 @@
       if (tab === 'notifications') await loadAdminNotifications();
     }
     async function loadDashboard() {
-      const target = document.getElementById('adminContent');
       const date = new Date().toLocaleDateString('en-CA', {timeZone: CONFIG.timeZone || 'Asia/Kolkata'});
       try {
         const d = await callServer('getDashboard',[token,date]);
-        if (!d.ok) { target.innerHTML = '<div class="card notice error">' + esc(d.message || 'Could not load dashboard.') + '</div>'; return; }
-        target.innerHTML = '<section class="card"><div class="toolbar"><h2>Attendance Dashboard</h2><div class="actions"><input type="date" id="dashDate" value="' + esc(d.date) + '"><button class="btn secondary" id="refreshDash">Refresh</button></div></div><div class="stats">' +
-          stat('Employees',d.kpi.total)+stat('Present',d.kpi.present)+stat('Late',d.kpi.late)+stat('Absent',d.kpi.absent)+
-          '</div><div class="stats">' + stat('Half Day',d.kpi.halfDay)+stat('Leave',d.kpi.leave)+stat('WFH Today',d.kpi.wfh||0)+stat('Attendance Rate',d.kpi.attendanceRate+'%')+stat('Pending WFH',d.kpi.pendingWfh||0)+stat('Pending Leave',d.kpi.pendingLeave||0)+stat('Pending Corrections',d.kpi.pendingRegularization||0)+stat('Date',d.date)+'</div>' +
-          '<div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Employee</th><th>Department</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Status</th></tr></thead><tbody>' +
-          d.daily.map(function(r){return '<tr><td><strong>'+esc(r.name)+'</strong><br><span class="muted">'+esc(r.employeeId)+'</span></td><td>'+esc(r.department)+'</td><td>'+esc(r.loginTime || '—')+'</td><td>'+esc(r.logoutTime || '—')+'</td><td>'+esc(r.hours || 0)+'</td><td>'+esc(r.workMode || '—')+'</td><td><span class="status '+statusClass(r.status)+'">'+esc(r.status)+'</span></td></tr>';}).join('')+
-          '</tbody></table></div></section>';
-        document.getElementById('refreshDash').addEventListener('click', function(){ loadDashboardForDate(document.getElementById('dashDate').value); });
-        document.getElementById('dashDate').addEventListener('change', function(){ loadDashboardForDate(this.value); });
-      } catch(err) { target.innerHTML = '<div class="card notice error">'+esc(err.message)+'</div>'; }
+        if (!d.ok) { document.getElementById('adminContent').innerHTML = '<div class="card notice error">' + esc(d.message || 'Could not load dashboard.') + '</div>'; return; }
+        renderDashboardData(d);
+      } catch(err) {
+        document.getElementById('adminContent').innerHTML = '<div class="card notice error">'+esc(err.message)+'</div>';
+      }
     }
     async function loadDashboardForDate(date, silent) {
       const target = document.getElementById('adminContent');
