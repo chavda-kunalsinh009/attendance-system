@@ -264,6 +264,74 @@
       .workspace-greeting>#todayDate{align-self:flex-start}
     }
 
+
+    /* Premium Admin Dashboard refresh — scoped to admin page components */
+    body:has(#adminPanel){background:radial-gradient(ellipse at 8% 0%,rgba(99,102,241,.08),transparent 32%),#f4f6fb}
+    body:has(#adminPanel) .shell{max-width:1320px;padding:28px 26px}
+    body:has(#adminPanel) .topbar{border:1px solid rgba(226,232,240,.9);box-shadow:0 8px 28px rgba(15,23,42,.055);padding:18px 22px}
+    body:has(#adminPanel) .topbar .brand h1{font-size:20px;letter-spacing:-.035em}
+    body:has(#adminPanel) #adminPanel{margin-top:24px}
+    #adminPanel .admin-actions{margin:0 0 14px}
+    #adminPanel .admin-actions #logoutAdmin{border-radius:11px;padding:10px 16px;box-shadow:0 2px 5px rgba(190,24,93,.05);transition:background .18s,transform .18s}
+    #adminPanel .admin-actions #logoutAdmin:hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(190,24,93,.1)}
+    #adminPanel .admin-tabs{gap:6px;padding:8px;margin-bottom:22px;border-radius:15px;background:rgba(255,255,255,.92);border-color:#e5eaf3;box-shadow:0 5px 20px rgba(15,23,42,.045)}
+    #adminPanel .admin-tabs button{position:relative;border-radius:10px;padding:12px 15px;font-size:12px;font-weight:750;transition:all .18s ease}
+    #adminPanel .admin-tabs button:not(.active):hover{background:#f1f5ff;transform:translateY(-1px)}
+    #adminPanel .admin-tabs button.active{background:linear-gradient(135deg,#4338ca,#6366f1);box-shadow:0 5px 13px rgba(79,70,229,.22)}
+    #adminContent .card{border:1px solid #e5eaf3;border-radius:18px;padding:26px;background:rgba(255,255,255,.98);box-shadow:0 10px 32px rgba(15,23,42,.05)}
+    #adminContent .dashboard-intro{padding:2px 0 18px;border-bottom:1px solid #edf0f6;margin-bottom:20px}
+    #adminContent .dashboard-intro h2{font-size:27px;line-height:1.2;letter-spacing:-.05em}
+    #adminContent .dashboard-intro p{font-size:13px;max-width:560px}
+    #adminContent .dashboard-toolbar{padding:7px;background:#f8fafc;border:1px solid #edf0f6;border-radius:13px}
+    #adminContent .dashboard-toolbar input{min-width:155px;background:#fff}
+    #adminContent .btn{border-radius:10px;min-height:40px;transition:transform .16s,box-shadow .16s,background .16s}
+    #adminContent .btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(15,23,42,.09)}
+    #adminContent .stats{gap:14px;margin-top:16px}
+    #adminContent .stat{border-radius:15px;padding:19px 18px 18px 21px;min-height:100px;transition:transform .18s,box-shadow .18s,border-color .18s}
+    #adminContent .stat:hover{transform:translateY(-2px);border-color:#c7d2fe;box-shadow:0 10px 24px rgba(79,70,229,.08)}
+    #adminContent .stat:before{width:4px;background:linear-gradient(180deg,#818cf8,#4f46e5)}
+    #adminContent .stat strong{font-size:29px;line-height:1.1;font-variant-numeric:tabular-nums}
+    #adminContent .section-heading{padding-top:3px}
+    #adminContent .table-wrap{border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,.025)}
+    #adminContent table{border-spacing:0}
+    #adminContent th{background:#f6f8fc;padding:14px 15px;font-size:10px;letter-spacing:.08em}
+    #adminContent td{padding:14px 15px;line-height:1.45}
+    #adminContent tbody tr{transition:background .15s}
+    #adminContent .field{margin:17px 0}
+    #adminContent .field span{font-size:12px;font-weight:750}
+    #adminContent input,#adminContent select{min-height:43px;border-radius:11px;border-color:#dbe2ed;background:#fff}
+    #adminContent input:focus,#adminContent select:focus{border-color:#818cf8;box-shadow:0 0 0 4px rgba(99,102,241,.11)}
+    #adminContent .notice{border:1px solid #e2e8f0;border-radius:12px;padding:13px 15px}
+    #adminContent .notice.ok{border-color:#bbf7d0}
+    #adminContent .notice.error{border-color:#fecaca}
+    #loginPanel{border:1px solid #e4e9f3;border-radius:20px!important;padding:30px!important;box-shadow:0 18px 48px rgba(15,23,42,.09)!important;background:linear-gradient(155deg,#fff,#fbfcff)}
+    #loginPanel h2{font-size:25px;letter-spacing:-.045em;margin-bottom:8px}
+    #loginPanel>p.muted{line-height:1.6}
+    #loginPanel .field span{font-size:12px;font-weight:750}
+    #loginPanel input{min-height:46px;border-radius:11px}
+    #loginPanel .btn{min-height:44px;border-radius:11px}
+    #loginPanel #adminLoginBtn{background:linear-gradient(135deg,#4338ca,#6366f1);box-shadow:0 6px 16px rgba(79,70,229,.2)}
+    #loginPanel #adminLoginBtn:hover{box-shadow:0 9px 22px rgba(79,70,229,.27)}
+    #loginPanel #pinRecovery{background:#f8faff;border-radius:13px;padding:17px!important;border:1px solid #e5eaf5;border-top:1px solid #e5eaf5!important}
+    #adminBoot{border:1px solid #e4e9f3;border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.05)}
+    body:has(#adminPanel) .foot{padding:22px 8px;color:#8a94a6}
+    @media(max-width:800px){
+      body:has(#adminPanel) .shell{padding:14px}
+      #adminContent .card{padding:18px}
+      #adminContent .dashboard-toolbar{width:100%}
+      #adminContent .dashboard-toolbar input{flex:1;min-width:140px}
+      #adminPanel .admin-tabs{gap:5px;padding:7px}
+      #adminPanel .admin-tabs button{padding:10px 12px}
+    }
+    @media(max-width:480px){
+      #adminContent .stats{gap:9px}
+      #adminContent .stat{padding:15px 12px 14px 16px;min-height:88px}
+      #adminContent .stat strong{font-size:23px}
+      #adminContent .dashboard-intro h2{font-size:23px}
+      #adminContent .dashboard-toolbar{align-items:stretch}
+      #adminContent .dashboard-toolbar input,#adminContent .dashboard-toolbar button{width:100%}
+      #loginPanel{padding:22px!important}
+    }
   </style>
 </head>
 <body>
