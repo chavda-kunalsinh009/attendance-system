@@ -45,7 +45,7 @@ const SETTINGS_HEADERS = ['Setting', 'Value', 'Help'];
 const HOLIDAY_HEADERS = ['Date', 'Holiday Name'];
 
 const DEMO_EMPLOYEES = [
-  ['EMP001', 'Aarav Mehta', 'Sales Executive', 'Sales', '', '', '1111', 'Active'],
+  ['EMP001', 'Kunalsinh Chavda', 'Jr. SEO Executive', 'SEO', '', '', '1111', 'Active'],
   ['EMP002', 'Priya Sharma', 'HR Manager', 'HR', '', '', '1111', 'Active'],
   ['EMP003', 'Rohan Patel', 'Accountant', 'Accounts', '', '', '1111', 'Active'],
   ['EMP004', 'Sneha Iyer', 'Graphic Designer', 'Marketing', '', '', '1111', 'Active'],
