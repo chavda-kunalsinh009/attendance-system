@@ -24,6 +24,10 @@ const SHEET_REGULARIZATION = 'Regularization_Requests';
 const SHEET_AUDIT = 'Admin_Audit_Log';
 const SHEET_WORK_SCHEDULES = 'Work_Schedules';
 const SHEET_WFH_REQUESTS = 'WFH_Requests';
+const SHEET_LEAVE_REQUESTS = 'Leave_Requests';
+const SHEET_NOTIFICATIONS = 'Notifications';
+const LEAVE_REQUEST_HEADERS = ['Request ID', 'Submitted At', 'Employee ID', 'Employee Name', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Reason', 'Status', 'Reviewed At', 'Reviewed By', 'Admin Remarks'];
+const NOTIFICATION_HEADERS = ['Notification ID', 'Created At', 'Audience', 'Recipient ID', 'Title', 'Message', 'Read', 'Related ID'];
 const WORK_SCHEDULE_HEADERS = ['Date', 'Employee ID', 'Work Mode', 'Approved By', 'Approved At', 'Notes'];
 const WFH_REQUEST_HEADERS = ['Request ID', 'Submitted At', 'Employee ID', 'Employee Name', 'Start Date', 'End Date', 'Reason', 'Status', 'Reviewed At', 'Reviewed By', 'Admin Remarks'];
 const REGULARIZATION_HEADERS = ['Request ID', 'Submitted At', 'Employee ID', 'Employee Name', 'Attendance Date', 'Type', 'Requested Login Time', 'Requested Logout Time', 'Reason', 'Status', 'Reviewed At', 'Reviewed By', 'Admin Remarks'];
@@ -105,10 +109,12 @@ function setup() {
   ensureSheet_(ss, SHEET_REGULARIZATION, REGULARIZATION_HEADERS, []);
   ensureSheet_(ss, SHEET_WORK_SCHEDULES, WORK_SCHEDULE_HEADERS, []);
   ensureSheet_(ss, SHEET_WFH_REQUESTS, WFH_REQUEST_HEADERS, []);
+  ensureSheet_(ss, SHEET_LEAVE_REQUESTS, LEAVE_REQUEST_HEADERS, []);
+  ensureSheet_(ss, SHEET_NOTIFICATIONS, NOTIFICATION_HEADERS, []);
   ensureAttendanceModeColumns_();
   formatSheets_(ss);
   SpreadsheetApp.getUi().alert(
-    'Setup completed.\n\nTabs created/checked: Employees, Attendance_Log, Settings, Holidays, Regularization_Requests.\nDefault Admin PIN: 2468\nDemo employee PIN: 1111\nChange these before using the system.'
+    'Setup completed.\n\nTabs created/checked: Employees, Attendance_Log, Settings, Holidays, Regularization_Requests, Work_Schedules, WFH_Requests, Leave_Requests, Notifications.\nDefault Admin PIN: 2468\nDemo employee PIN: 1111\nChange these before using the system.'
   );
 }
 
@@ -131,6 +137,8 @@ function upgradeSchemaSafely_() {
   saveSetting_('Admin Email', getSettingsMap_()['Admin Email'] || '');
   ensureSheet_(ss, SHEET_WORK_SCHEDULES, WORK_SCHEDULE_HEADERS, []);
   ensureSheet_(ss, SHEET_WFH_REQUESTS, WFH_REQUEST_HEADERS, []);
+  ensureSheet_(ss, SHEET_LEAVE_REQUESTS, LEAVE_REQUEST_HEADERS, []);
+  ensureSheet_(ss, SHEET_NOTIFICATIONS, NOTIFICATION_HEADERS, []);
   ensureAttendanceModeColumns_();
   if (!ss.getSheetByName(SHEET_AUDIT)) { const audit = ss.insertSheet(SHEET_AUDIT); audit.getRange(1,1,1,4).setValues([['Timestamp','Actor','Event','Details']]).setFontWeight('bold').setBackground('#EEF2FF'); audit.setFrozenRows(1); }
   SpreadsheetApp.getUi().alert('Safe schema upgrade completed. Existing records were not deleted or cleared.\nSet Admin Email in Settings before using OTP recovery.');
@@ -380,6 +388,7 @@ function markAttendance(req) {
     const action = clean_(req.action).toLowerCase();
     const row = getOrCreateTodayRow_(employee);
     const sheet = getLogSheet_();
+    if (clean_(row.status).toLowerCase() === 'leave') return { ok: false, message: 'Your approved leave is recorded for today. Contact Admin if attendance needs to be reopened.' };
     const existingMode = getLogField_(row.rowNumber, 'Work Mode');
     if (existingMode && existingMode !== requestedMode) {
       return { ok: false, message: 'Your attendance is already started in ' + existingMode + ' mode. Contact Admin if this needs correction.' };
@@ -585,17 +594,26 @@ function getDashboard(token, date) {
       return {
         employeeId: e.id, name: e.name, designation: e.designation, department: e.department,
         loginTime: r ? r.loginTime : '', logoutTime: r ? r.logoutTime : '',
-        hours: r ? r.hours : 0, status: r ? (r.status || (r.loginTime ? 'Present' : 'Absent')) : 'Absent'
+        hours: r ? r.hours : 0, workMode: r ? (getLogField_(r.rowNumber, 'Work Mode') || 'Office') : '—', status: r ? (r.status || (r.loginTime ? 'Present' : 'Absent')) : 'Absent'
       };
     });
     const counts = { Present: 0, Late: 0, 'Half Day': 0, Leave: 0, Absent: 0 };
     daily.forEach(function(r) { counts[counts[r.status] === undefined ? 'Absent' : r.status]++; });
     const total = daily.length;
+    let wfhToday = 0, pendingWfh = 0, pendingLeave = 0, pendingRegularization = 0;
+    try {
+      const scheduleRows = getRequiredSheet_(SHEET_WORK_SCHEDULES).getDataRange().getDisplayValues();
+      for (let i=1;i<scheduleRows.length;i++) if (clean_(scheduleRows[i][0])===selectedDate && clean_(scheduleRows[i][2]).toLowerCase()==='wfh') wfhToday++;
+    } catch (e) {}
+    try { const v=getRequiredSheet_(SHEET_WFH_REQUESTS).getDataRange().getDisplayValues(); for(let i=1;i<v.length;i++) if(clean_(v[i][7])==='Pending') pendingWfh++; } catch(e) {}
+    try { const v=getRequiredSheet_(SHEET_LEAVE_REQUESTS).getDataRange().getDisplayValues(); for(let i=1;i<v.length;i++) if(clean_(v[i][9])==='Pending') pendingLeave++; } catch(e) {}
+    try { const v=getRequiredSheet_(SHEET_REGULARIZATION).getDataRange().getDisplayValues(); for(let i=1;i<v.length;i++) if(clean_(v[i][9])==='Pending') pendingRegularization++; } catch(e) {}
     return {
       ok: true, date: selectedDate, daily: daily,
       kpi: {
         total: total, present: counts.Present, late: counts.Late,
         halfDay: counts['Half Day'], leave: counts.Leave, absent: counts.Absent,
+        wfh: wfhToday, pendingWfh: pendingWfh, pendingLeave: pendingLeave, pendingRegularization: pendingRegularization,
         attendanceRate: total ? Math.round(((counts.Present + counts.Late + counts['Half Day']) / total) * 100) : 0
       }
     };
@@ -961,6 +979,9 @@ function requestWFH(employeeId, pin, payload) {
     }
     const id = 'WFHR-' + Utilities.getUuid().slice(0,8).toUpperCase();
     sheet.appendRow([id,timestamp_(),employee.id,employee.name,start,end,reason,'Pending','','','']);
+    createNotification_('Admin','', 'New WFH request', employee.name+' requested WFH from '+start+' to '+end+'.', id);
+    createNotification_('Employee',employee.id,'WFH request submitted','Your WFH request ('+start+' to '+end+') is pending Admin review.',id);
+    writeAuditLog_(employee.id,'WFH request submitted',id+' '+start+' to '+end);
     return {ok:true,message:'WFH request submitted. Attendance mode will be enabled only after Admin approval.',requestId:id};
   } catch (err) { return {ok:false,message:err.message || 'Could not submit WFH request.'}; }
   finally { try { lock.releaseLock(); } catch(e) {} }
@@ -976,8 +997,7 @@ function getEmployeeWFHStatus(employeeId, pin) {
     const values = getRequiredSheet_(SHEET_WFH_REQUESTS).getDataRange().getDisplayValues();
     const requests=[];
     for (let i=1;i<values.length;i++) {
-      const r=values[i]; if (clean_(r[2]).toLowerCase() !== employee.id.toLowerCase()) continue;
-      requests.push({requestId:r[0],submittedAt:r[1],startDate:r[4],endDate:r[5],reason:r[6],status:r[7],adminRemarks:r[10]});
+      const r=values[i]; if (clean_(r[2]).toLowerCase() !== employee.id.toLowerCase()) continue;      requests.push({requestId:r[0],submittedAt:r[1],startDate:r[4],endDate:r[5],reason:r[6],status:r[7],adminRemarks:r[10]});
     }
     requests.reverse();
     return {ok:true,today:today_(),wfhApprovedToday:hasApprovedWFHSchedule_(employee.id,today_()),requests:requests};
@@ -1029,6 +1049,7 @@ function reviewWFHRequest(token, requestId, decision, remarks) {
     sheet.getRange(rowNum,9).setValue(timestamp_());
     sheet.getRange(rowNum,10).setValue('Admin');
     sheet.getRange(rowNum,11).setValue(remarks);
+    createNotification_('Employee',employee.id,'WFH request '+decision.toLowerCase(),'Your WFH request ('+clean_(r[4])+' to '+clean_(r[5])+') was '+decision.toLowerCase()+'.'+(remarks?' Admin note: '+remarks:''),clean_(requestId));
     writeAuditLog_('Admin','WFH request '+decision.toLowerCase(),clean_(requestId)+' for '+employee.id+'; no secrets logged');
     return {ok:true,message:'WFH request '+decision.toLowerCase()+'.'+(decision==='Approved'?' Approved dates are now available for WFH attendance.':'')};
   } catch(err) { return {ok:false,message:err.message || 'Could not review WFH request.'}; }
@@ -1070,4 +1091,182 @@ function getWorkSchedules(token, startDate, endDate) {
     for(let i=1;i<values.length;i++){const r=values[i];if(clean_(r[0])>=start&&clean_(r[0])<=end)schedules.push({date:r[0],employeeId:r[1],workMode:r[2],approvedBy:r[3],approvedAt:r[4],notes:r[5]});}
     return {ok:true,schedules:schedules};
   } catch(err) { return {ok:false,message:err.message || 'Could not load work schedules.'}; }
+}
+
+
+/* ========================= LEAVE, REPORTS & IN-APP NOTIFICATIONS ========================= */
+
+function createNotification_(audience, recipientId, title, message, relatedId) {
+  try {
+    const sheet = getRequiredSheet_(SHEET_NOTIFICATIONS);
+    const id = 'NTF-' + Utilities.getUuid().slice(0, 10).toUpperCase();
+    sheet.appendRow([id, timestamp_(), clean_(audience), clean_(recipientId), clean_(title), clean_(message), 'No', clean_(relatedId)]);
+    return id;
+  } catch (e) { return ''; }
+}
+
+/** Submit a leave request. A request never marks attendance as Leave until approved. */
+function requestLeave(employeeId, pin, payload) {
+  const lock = LockService.getScriptLock();
+  try {
+    payload = payload || {};
+    const employee = findEmployee_(employeeId);
+    if (!employee || String(employee.status).toLowerCase() === 'inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings = getSettingsSafe_();
+    if (settings.requirePin && clean_(pin) !== employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const type = clean_(payload.leaveType || 'Casual Leave');
+    const allowed = ['Casual Leave','Sick Leave','Earned Leave','Unpaid Leave','Other'];
+    const start = clean_(payload.startDate), end = clean_(payload.endDate), reason = clean_(payload.reason);
+    if (allowed.indexOf(type) < 0) return {ok:false,message:'Choose a valid leave type.'};
+    if (!validIsoDate_(start) || !validIsoDate_(end) || end < start) return {ok:false,message:'Choose a valid leave date range.'};
+    if (start < today_()) return {ok:false,message:'Leave requests must start today or in the future.'};
+    if (!reason || reason.length < 5) return {ok:false,message:'Please provide a reason (at least 5 characters).'};
+    const days = Math.round((Date.parse(end+'T00:00:00Z') - Date.parse(start+'T00:00:00Z')) / 86400000) + 1;
+    if (days > 31) return {ok:false,message:'A single leave request cannot exceed 31 calendar days.'};
+    lock.waitLock(10000);
+    const sheet = getRequiredSheet_(SHEET_LEAVE_REQUESTS), values = sheet.getDataRange().getDisplayValues();
+    for (let i=1;i<values.length;i++) {
+      const r=values[i];
+      if (clean_(r[2]).toLowerCase()===employee.id.toLowerCase() && clean_(r[9])==='Pending' && clean_(r[5])<=end && clean_(r[6])>=start) return {ok:false,message:'You already have a pending leave request overlapping these dates.'};
+    }
+    // Do not allow leave to overlap days already attended.
+    const logs = readLogs_();
+    const attended = logs.some(function(r){return r.employeeId.toLowerCase()===employee.id.toLowerCase() && r.date>=start && r.date<=end && !!r.loginTime;});
+    if (attended) return {ok:false,message:'This date range overlaps an attendance check-in. Submit a separate request for dates without attendance.'};
+    const id='LEAVE-' + Utilities.getUuid().slice(0,8).toUpperCase();
+    sheet.appendRow([id,timestamp_(),employee.id,employee.name,type,start,end,days,reason,'Pending','','','']);
+    createNotification_('Admin','', 'New leave request', employee.name+' submitted '+type+' for '+start+' to '+end+'.', id);
+    createNotification_('Employee',employee.id,'Leave request submitted','Your '+type+' request ('+start+' to '+end+') is pending Admin review.',id);
+    writeAuditLog_(employee.id,'Leave request submitted',id+' '+start+' to '+end);
+    return {ok:true,message:'Leave request submitted. It will affect attendance only after Admin approval.',requestId:id};
+  } catch(err) { return {ok:false,message:err.message || 'Could not submit leave request.'}; }
+  finally { try {lock.releaseLock();} catch(e){} }
+}
+
+function getEmployeeLeaveStatus(employeeId, pin) {
+  try {
+    const employee=findEmployee_(employeeId);
+    if(!employee || String(employee.status).toLowerCase()==='inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings=getSettingsSafe_();
+    if(settings.requirePin && clean_(pin)!==employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const values=getRequiredSheet_(SHEET_LEAVE_REQUESTS).getDataRange().getDisplayValues(), requests=[];
+    for(let i=1;i<values.length;i++) { const r=values[i]; if(clean_(r[2]).toLowerCase()!==employee.id.toLowerCase()) continue; requests.push({requestId:r[0],submittedAt:r[1],leaveType:r[4],startDate:r[5],endDate:r[6],days:Number(r[7])||0,reason:r[8],status:r[9],adminRemarks:r[12]}); }
+    requests.reverse();
+    return {ok:true,requests:requests};
+  } catch(err) { return {ok:false,message:err.message || 'Could not load leave requests.'}; }
+}
+
+function getLeaveRequests(token) {
+  if(!isAdmin_(token)) return {ok:false,authFailed:true,message:'Admin session expired. Sign in again.'};
+  try {
+    const values=getRequiredSheet_(SHEET_LEAVE_REQUESTS).getDataRange().getDisplayValues(), requests=[];
+    for(let i=1;i<values.length;i++) { const r=values[i]; if(!clean_(r[0])) continue; requests.push({requestId:r[0],submittedAt:r[1],employeeId:r[2],employeeName:r[3],leaveType:r[4],startDate:r[5],endDate:r[6],days:Number(r[7])||0,reason:r[8],status:r[9],reviewedAt:r[10],reviewedBy:r[11],adminRemarks:r[12]}); }
+    requests.reverse(); return {ok:true,requests:requests};
+  } catch(err) { return {ok:false,message:err.message || 'Could not load leave requests.'}; }
+}
+
+function reviewLeaveRequest(token, requestId, decision, remarks) {
+  if(!isAdmin_(token)) return {ok:false,authFailed:true,message:'Admin session expired. Sign in again.'};
+  const lock=LockService.getScriptLock();
+  try {
+    decision=clean_(decision); remarks=clean_(remarks);
+    if(decision!=='Approved' && decision!=='Rejected') return {ok:false,message:'Invalid review decision.'};
+    lock.waitLock(10000);
+    const sheet=getRequiredSheet_(SHEET_LEAVE_REQUESTS), values=sheet.getDataRange().getDisplayValues();
+    let rowNum=0,r=null;
+    for(let i=1;i<values.length;i++) if(clean_(values[i][0])===clean_(requestId)){rowNum=i+1;r=values[i];break;}
+    if(!r) return {ok:false,message:'Leave request not found.'};
+    if(clean_(r[9])!=='Pending') return {ok:false,message:'This leave request has already been reviewed.'};
+    const employee=findEmployee_(r[2]); if(!employee) return {ok:false,message:'Employee record no longer exists.'};
+    if(decision==='Approved') {
+      const start=clean_(r[5]), end=clean_(r[6]);
+      if(!validIsoDate_(start)||!validIsoDate_(end)||end<start) return {ok:false,message:'Saved leave date range is invalid.'};
+      const logSheet=getLogSheet_(), existing=logSheet.getDataRange().getDisplayValues();
+      const existingRows={};
+      for(let i=1;i<existing.length;i++) if(clean_(existing[i][1]).toLowerCase()===employee.id.toLowerCase()) existingRows[clean_(existing[i][0])]=i+1;
+      const holidays={};
+      try { const h=getRequiredSheet_(SHEET_HOLIDAYS).getDataRange().getDisplayValues(); for(let i=1;i<h.length;i++) holidays[clean_(h[i][0])]=true; } catch(e){}
+      const settings=getSettingsSafe_();
+      for(let ms=Date.parse(start+'T00:00:00Z');ms<=Date.parse(end+'T00:00:00Z');ms+=86400000) {
+        const date=new Date(ms).toISOString().slice(0,10), dayName=new Date(ms).toLocaleDateString('en-US',{weekday:'long',timeZone:'UTC'}).toLowerCase();
+        if(settings.weeklyOffDays.indexOf(dayName)>=0 || holidays[date]) continue;
+        const targetRow=existingRows[date];
+        if(targetRow) {
+          const row=existing[targetRow-1];
+          if(clean_(row[5])) continue; // Never overwrite a recorded check-in.
+          logSheet.getRange(targetRow,9).setValue('Leave');
+          logSheet.getRange(targetRow,12).setValue((clean_(row[11])?clean_(row[11])+' | ':'')+'Approved leave '+clean_(requestId));
+          logSheet.getRange(targetRow,13).setValue(timestamp_());
+        } else {
+          logSheet.appendRow([date,employee.id,employee.name,employee.designation,employee.department,'','','','Leave','','','Approved leave '+clean_(requestId),timestamp_()]);
+        }
+      }
+    }
+    sheet.getRange(rowNum,10).setValue(decision); sheet.getRange(rowNum,11).setValue(timestamp_()); sheet.getRange(rowNum,12).setValue('Admin'); sheet.getRange(rowNum,13).setValue(remarks);
+    createNotification_('Employee',employee.id,'Leave request '+decision.toLowerCase(),'Your '+clean_(r[4])+' request ('+clean_(r[5])+' to '+clean_(r[6])+') was '+decision.toLowerCase()+'.'+(remarks?' Admin note: '+remarks:''),clean_(requestId));
+    writeAuditLog_('Admin','Leave request '+decision.toLowerCase(),clean_(requestId)+' for '+employee.id);
+    return {ok:true,message:'Leave request '+decision.toLowerCase()+'.'+(decision==='Approved'?' Eligible weekdays were marked Leave where no check-in existed.':'')};
+  } catch(err) { return {ok:false,message:err.message || 'Could not review leave request.'}; }
+  finally { try {lock.releaseLock();} catch(e){} }
+}
+
+/** Month-level attendance export source. Returns only records in the requested month. */
+function getMonthlyAttendanceReport(token, month) {
+  if(!isAdmin_(token)) return {ok:false,authFailed:true,message:'Admin session expired. Sign in again.'};
+  try {
+    month=clean_(month);
+    if(!/^\d{4}-\d{2}$/.test(month)) month=today_().slice(0,7);
+    const start=month+'-01', nextDate=new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),1));
+    const end=new Date(nextDate.getTime()-86400000).toISOString().slice(0,10);
+    const employees=readEmployees_().filter(function(e){return String(e.status).toLowerCase()!=='inactive';});
+    const logs=readLogs_().filter(function(r){return r.date>=start && r.date<=end;});
+    const records=logs.map(function(r){
+      let workMode='Office';
+      try { const vals=getLogSheet_().getRange(r.rowNumber,1,1,getLogSheet_().getLastColumn()).getDisplayValues()[0]; const headers=getLogSheet_().getRange(1,1,1,getLogSheet_().getLastColumn()).getDisplayValues()[0]; const idx=headers.indexOf('Work Mode'); if(idx>=0 && clean_(vals[idx])) workMode=clean_(vals[idx]); } catch(e){}
+      return {date:r.date,employeeId:r.employeeId,name:r.name,department:r.department,loginTime:r.loginTime,logoutTime:r.logoutTime,hours:r.hours,status:r.status || (r.loginTime?'Present':'Absent'),workMode:workMode};
+    }).sort(function(a,b){return a.date.localeCompare(b.date)||a.name.localeCompare(b.name);});
+    const summary={month:month,employeeCount:employees.length,recordCount:records.length,totalHours:0,present:0,late:0,halfDay:0,leave:0,absent:0,wfh:0};
+    records.forEach(function(r){summary.totalHours+=Number(r.hours)||0;if(r.status==='Present')summary.present++;if(r.status==='Late')summary.late++;if(r.status==='Half Day')summary.halfDay++;if(r.status==='Leave')summary.leave++;if(r.status==='Absent')summary.absent++;if(r.workMode==='WFH')summary.wfh++;});
+    summary.totalHours=Math.round(summary.totalHours*100)/100;
+    return {ok:true,month:month,startDate:start,endDate:end,summary:summary,records:records};
+  } catch(err) { return {ok:false,message:err.message || 'Could not build monthly report.'}; }
+}
+
+function getEmployeeNotifications(employeeId, pin) {
+  try {
+    const employee=findEmployee_(employeeId); if(!employee || String(employee.status).toLowerCase()==='inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings=getSettingsSafe_(); if(settings.requirePin && clean_(pin)!==employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const values=getRequiredSheet_(SHEET_NOTIFICATIONS).getDataRange().getDisplayValues(), items=[];
+    for(let i=1;i<values.length;i++){const r=values[i];if(clean_(r[2])!=='Employee'||clean_(r[3]).toLowerCase()!==employee.id.toLowerCase())continue;items.push({id:r[0],createdAt:r[1],title:r[4],message:r[5],read:clean_(r[6])==='Yes'});}
+    items.reverse(); return {ok:true,notifications:items.slice(0,50),unread:items.filter(function(x){return !x.read;}).length};
+  } catch(err) { return {ok:false,message:err.message || 'Could not load notifications.'}; }
+}
+
+function getAdminNotifications(token) {
+  if(!isAdmin_(token)) return {ok:false,authFailed:true,message:'Admin session expired. Sign in again.'};
+  try {
+    const values=getRequiredSheet_(SHEET_NOTIFICATIONS).getDataRange().getDisplayValues(), items=[];
+    for(let i=1;i<values.length;i++){const r=values[i];if(clean_(r[2])!=='Admin')continue;items.push({id:r[0],createdAt:r[1],title:r[4],message:r[5],relatedId:r[7],read:clean_(r[6])==='Yes'});}
+    items.reverse(); return {ok:true,notifications:items.slice(0,100),unread:items.filter(function(x){return !x.read;}).length};
+  } catch(err) { return {ok:false,message:err.message || 'Could not load notifications.'}; }
+}
+
+function markNotificationRead(employeeId, pin, notificationId) {
+  try {
+    const employee=findEmployee_(employeeId); if(!employee || String(employee.status).toLowerCase()==='inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings=getSettingsSafe_(); if(settings.requirePin && clean_(pin)!==employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const sheet=getRequiredSheet_(SHEET_NOTIFICATIONS), values=sheet.getDataRange().getDisplayValues();
+    for(let i=1;i<values.length;i++){const r=values[i];if(clean_(r[0])===clean_(notificationId)&&clean_(r[2])==='Employee'&&clean_(r[3]).toLowerCase()===employee.id.toLowerCase()){sheet.getRange(i+1,7).setValue('Yes');return {ok:true};}}
+    return {ok:false,message:'Notification not found.'};
+  } catch(err) { return {ok:false,message:err.message || 'Could not update notification.'}; }
+}
+
+
+function markAdminNotificationRead(token, notificationId) {
+  if(!isAdmin_(token)) return {ok:false,authFailed:true,message:'Admin session expired. Sign in again.'};
+  try {
+    const sheet=getRequiredSheet_(SHEET_NOTIFICATIONS), values=sheet.getDataRange().getDisplayValues();
+    for(let i=1;i<values.length;i++) if(clean_(values[i][0])===clean_(notificationId) && clean_(values[i][2])==='Admin') { sheet.getRange(i+1,7).setValue('Yes'); return {ok:true}; }
+    return {ok:false,message:'Notification not found.'};
+  } catch(err) { return {ok:false,message:err.message || 'Could not update notification.'}; }
 }
