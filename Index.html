@@ -95,8 +95,10 @@
     /* High-contrast employee identity card: readable against the attendance hero background */
     .attendance-hero .employee-live-card{background:#ffffff;border:1px solid #dcefeb;box-shadow:0 4px 14px rgba(0,45,42,.12)}
     .attendance-hero .employee-live-info strong{color:#102a2a!important;font-weight:800}
-    .attendance-hero .employee-live-info .employee-live-meta{color:#475569!important;font-weight:600}
-    .attendance-hero .employee-live-avatar{background:#d9f5f1;color:#087f79;border:1px solid #b9e8e1}
+    .attendance-hero .employee-live-card{background:#fff!important;border:2px solid #0f766e!important;box-shadow:0 8px 22px rgba(15,118,110,.16)!important}
+    .attendance-hero .employee-live-info strong{color:#0f172a!important;font-size:15px!important;font-weight:900!important;letter-spacing:.01em}
+    .attendance-hero .employee-live-info .employee-live-meta{color:#334155!important;font-weight:700!important}
+    .attendance-hero .employee-live-avatar{background:#ccfbf1!important;color:#115e59!important;border:2px solid #5eead4!important;font-size:18px!important}
     .attendance-hero .employee-live-status{background:#dcfce7;border-color:#bbf7d0;color:#166534}
     .attendance-hero .employee-live-status.is-out{background:#f1f5f9;border-color:#cbd5e1;color:#475569}
     .attendance-hero .employee-live-status .status-light{background:#16a34a}
@@ -309,7 +311,7 @@
 
     async function loadAttendanceHistory() {
       const target=document.getElementById('attendanceHistory'); if(!verifiedEmployee || !target) return;
-      try { const d=await callServer('getEmployeeAttendanceHistory',[verifiedEmployee.id,verifiedEmployee.pin]); if(!d.ok) {target.innerHTML='<div class=\"notice error\">'+esc(d.message||'Could not load attendance history.')+'</div>';return;} const rows=d.records||[]; target.innerHTML=rows.length?'<div class=\"table-wrap\"><table><thead><tr><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Mode</th><th>Status</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+esc(r.date)+'</td><td>'+esc(r.loginTime||'—')+'</td><td>'+esc(r.logoutTime||'—')+'</td><td>'+esc(r.hours||'—')+'</td><td>'+esc(r.status||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class=\"notice\">No attendance history found yet.</div>'; } catch(e){target.innerHTML='<div class=\"notice error\">'+esc(e.message)+'</div>';}
+      try { const d=await callServer('getEmployeeAttendanceHistory',[verifiedEmployee.id,verifiedEmployee.pin]); if(!d.ok) {target.innerHTML='<div class=\"notice error\">'+esc(d.message||'Could not load attendance history.')+'</div>';return;} const rows=d.records||[]; target.innerHTML=rows.length?'<div class=\"table-wrap\"><table><thead><tr><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Mode</th><th>Status</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+esc(r.date)+'</td><td>'+esc(r.loginTime||'—')+'</td><td>'+esc(r.logoutTime||'—')+'</td><td>'+esc(r.hours||'—')+'</td><td>'+esc(r.workMode||'Office')+'</td><td>'+esc(r.status||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class=\"notice\">No attendance history found yet.</div>'; } catch(e){target.innerHTML='<div class=\"notice error\">'+esc(e.message)+'</div>';}
     }
     async function loadMyRequests() {
       const target=document.getElementById('myRequestsList'); if(!verifiedEmployee || !target) return;
@@ -337,19 +339,19 @@
       catch(err){showMessage('leaveMessage',err.message,'error');} finally{btn.disabled=false;}
     }
     async function loadLeaveStatus() {
-      const target=document.getElementById('myLeaveRequests'); if(!verifiedEmployee){target.innerHTML='<div class="notice">Sign in to view leave requests.</div>';return;}
+      const target=document.getElementById('myLeaveRequests'); if(!target)return; if(!verifiedEmployee){target.innerHTML='<div class="notice">Sign in to view leave requests.</div>';return;}
       try { const d=await callServer('getEmployeeLeaveStatus',[verifiedEmployee.id,verifiedEmployee.pin]); if(!d.ok){target.innerHTML='<div class="notice error">'+esc(d.message||'Could not load leave requests.')+'</div>';return;} const rows=(d.requests||[]).map(function(r){return '<tr><td>'+esc(r.leaveType)+'</td><td>'+esc(r.startDate)+' – '+esc(r.endDate)+'</td><td>'+esc(r.days)+'</td><td>'+esc(r.status)+'</td><td>'+esc(r.adminRemarks||'—')+'</td></tr>';}).join(''); target.innerHTML=rows?'<div class="table-wrap"><table><thead><tr><th>Type</th><th>Date range</th><th>Days</th><th>Status</th><th>Admin remarks</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="notice">No leave requests submitted yet.</div>'; }
       catch(err){target.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';}
     }
     async function loadEmployeeNotifications() {
-      const target=document.getElementById('employeeNotifications'); if(!verifiedEmployee){target.innerHTML='<div class="notice">Sign in to view notifications.</div>';return;}
+      const target=document.getElementById('employeeNotifications'); if(!target)return; if(!verifiedEmployee){target.innerHTML='<div class="notice">Sign in to view notifications.</div>';return;}
       try { const d=await callServer('getEmployeeNotifications',[verifiedEmployee.id,verifiedEmployee.pin]); if(!d.ok){target.innerHTML='<div class="notice error">'+esc(d.message||'Could not load notifications.')+'</div>';return;} document.getElementById('notificationCount').textContent=(d.unread||0)+' unread'; const items=d.notifications||[]; target.innerHTML=items.length?items.map(function(n){return '<div class="notice '+(n.read?'':'ok')+'" style="margin-bottom:8px"><strong>'+esc(n.title)+'</strong><div class="small muted">'+esc(n.createdAt)+'</div><div>'+esc(n.message)+'</div>'+(n.read?'':'<button class="btn secondary" style="margin-top:8px" data-notification-read="'+esc(n.id)+'">Mark read</button>')+'</div>';}).join(''):'<div class="notice">You have no notifications yet.</div>'; target.querySelectorAll('[data-notification-read]').forEach(function(btn){btn.addEventListener('click',async function(){btn.disabled=true;try{const r=await callServer('markNotificationRead',[verifiedEmployee.id,verifiedEmployee.pin,btn.dataset.notificationRead]);if(r.ok)await loadEmployeeNotifications();else btn.disabled=false;}catch(e){btn.disabled=false;}});}); }
       catch(err){target.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';}
     }
 
     async function loadWFHStatus() {
-      if (!verifiedEmployee) return;
       const target = document.getElementById('myWFHRequests');
+      if (!target || !verifiedEmployee) return;
       try {
         const d = await callServer('getEmployeeWFHStatus', [verifiedEmployee.id, verifiedEmployee.pin]);
         if (!d.ok) { target.innerHTML = '<div class="notice error">' + esc(d.message || 'Could not load WFH status.') + '</div>'; return; }
@@ -366,6 +368,7 @@
     }
     async function loadDepartmentMembers() {
       const target = document.getElementById('departmentMembers');
+      if (!target || !verifiedEmployee) return;
       try {
         const d = await callServer('getDepartmentMembers', [verifiedEmployee.id, verifiedEmployee.pin]);
         if (!d.ok) { target.innerHTML = '<div class="notice error">' + esc(d.message || 'Could not load team members.') + '</div>'; return; }
