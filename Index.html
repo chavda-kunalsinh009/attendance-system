@@ -74,6 +74,7 @@
     .workspace-nav .nav-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;color:#526078;font-weight:600;text-decoration:none;cursor:pointer}
     .workspace-nav .nav-item.active,.workspace-nav .nav-item:hover{background:#EEF2FF;color:#4F46E5}
     .nav-glyph{width:20px;height:20px;flex:0 0 20px;display:inline-grid;place-items:center}.nav-glyph svg{width:19px;height:19px;display:block;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.workspace-nav .nav-item.active .nav-glyph{color:#4F46E5}
+    .overview-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0 0 22px}.overview-tools .card{min-width:0;margin:0}.insight-card,.goal-card,.kudos-card,.assistant-card{overflow:hidden}.insight-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:#EEF2FF;color:#4338CA;font-size:20px;font-weight:800;flex:0 0 auto}.insight-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:15px 0 12px}.insight-stats>div{padding:12px 10px;background:#F8FAFC;border:1px solid #E8EDF5;border-radius:11px;min-width:0}.insight-stats strong{display:block;font-size:22px;color:#3730A3;line-height:1.2;font-variant-numeric:tabular-nums}.insight-stats span{display:block;margin-top:5px;font-size:11px;color:#64748B;line-height:1.35}.goal-form{display:flex;gap:8px;margin:14px 0 12px}.goal-form input{min-width:0;flex:1;border:1px solid #D8E0EC;border-radius:10px;padding:10px 12px}.goal-progress{display:flex;align-items:center;gap:10px;margin:10px 0 12px}.goal-progress-track{height:7px;background:#E8EDF5;border-radius:99px;overflow:hidden;flex:1}.goal-progress-track span{display:block;width:0;height:100%;background:linear-gradient(90deg,#4F46E5,#818CF8);border-radius:99px;transition:width .2s}.goal-progress strong{font-size:11px;color:#64748B;white-space:nowrap}.goal-item{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-top:1px solid #EEF2F7}.goal-item input{margin-top:3px;accent-color:#4F46E5}.goal-item span{flex:1;overflow-wrap:anywhere;line-height:1.45}.goal-item.done span{text-decoration:line-through;color:#94A3B8}.goal-empty{font-size:12px;color:#94A3B8;padding:8px 0}.kudos-wall-list{margin-top:14px;display:grid;gap:8px}.kudos-item{padding:10px 11px;border-radius:11px;background:#F8FAFC;border:1px solid #E8EDF5}.kudos-item strong{font-size:12px;color:#3730A3}.kudos-item p{margin:5px 0 0;line-height:1.45;overflow-wrap:anywhere}.kudos-item .muted{font-size:10px}.assistant-questions{display:grid;grid-template-columns:1fr;gap:7px;margin:14px 0}.assistant-questions button{text-align:left;padding:10px 12px;border:1px solid #E2E8F0;background:#fff;color:#334155;border-radius:9px;font-size:12px;font-weight:650}.assistant-questions button:hover{border-color:#A5B4FC;background:#EEF2FF;color:#3730A3}.assistant-answer{padding:12px;border-radius:10px;background:#F8FAFC;color:#475569;font-size:12px;line-height:1.55;min-height:48px}.overview-tools.hidden{display:none!important}@media(max-width:760px){.overview-tools{grid-template-columns:1fr}.insight-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .notification-nav-glyph{position:relative}.notification-nav-badge{position:absolute;top:-9px;right:-11px;min-width:17px;height:17px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;border:2px solid #102033;border-radius:999px;background:#EF4444;color:#fff;font-size:10px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;box-shadow:0 2px 5px rgba(0,0,0,.18)}.notification-nav-badge.hidden{display:none!important}
     .workspace-main{min-width:0;padding:24px 30px 32px}
     .workspace-top{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;padding:14px 20px;border:1px solid #edf0f5;border-radius:14px;margin-bottom:24px}
@@ -394,6 +395,12 @@
       '<article class="boost-card"><div class="boost-eyebrow">🎯 Today’s focus</div><h3>Finish your most important task first.</h3><p>Choose one priority, give it your attention, and make steady progress before switching tasks.</p></article>' +
       '<article class="boost-card"><div class="boost-eyebrow">💡 Daily learning tip</div><h3 id="dailyLearningTitle">Learn one thing. Apply it today.</h3><p id="dailyLearningText">Small, consistent learning can improve your skills over time.</p></article>' +
       '</section>' +
+      '<section class="overview-tools" id="overviewTools" aria-label="Personal productivity tools">' +
+      '<article class="card insight-card"><div class="toolbar"><div><h2>My Attendance Insights</h2><p class="muted small">Your recent attendance at a glance</p></div><span class="insight-icon">↗</span></div><div class="insight-stats"><div><strong id="myDaysPresent">—</strong><span>Days attended</span></div><div><strong id="myOnTimeDays">—</strong><span>On-time days</span></div><div><strong id="myHoursTotal">—</strong><span>Hours logged</span></div><div><strong id="myStreak">—</strong><span>Recent streak</span></div></div><p class="muted small" id="myAttendanceTip">Sign in to see your personal attendance insights.</p></article>' +
+      '<article class="card goal-card"><div class="toolbar"><div><h2>Today’s Focus</h2><p class="muted small">Choose up to 5 small wins for today</p></div><span class="insight-icon">✓</span></div><form id="dailyGoalForm" class="goal-form"><input id="dailyGoalInput" maxlength="160" placeholder="Add a goal for today…" aria-label="Daily goal" required><button class="btn primary" type="submit">Add</button></form><div class="goal-progress"><div class="goal-progress-track"><span id="goalProgressFill"></span></div><strong id="goalProgressLabel">0 / 5 goals</strong></div><div id="dailyGoalList"><div class="notice">Sign in to manage your daily goals.</div></div></article>' +
+      '<article class="card kudos-card"><div class="toolbar"><div><h2>Kudos Wall</h2><p class="muted small">Celebrate a teammate’s great work</p></div><span class="insight-icon">✦</span></div><form id="kudosForm"><label class="field"><span>Appreciate a teammate</span><select id="kudosRecipient" required><option value="">Choose teammate</option></select></label><label class="field"><span>Your message</span><input id="kudosMessage" maxlength="240" minlength="5" placeholder="Thanks for helping with…" required></label><button class="btn secondary full" type="submit">Send appreciation</button><div id="kudosMessageStatus" class="notice hidden" role="status"></div></form><div class="kudos-wall-list" id="teamKudosList"><div class="notice">Sign in to see team appreciation.</div></div></article>' +
+      '<article class="card assistant-card"><div class="toolbar"><div><h2>Attendance Assistant</h2><p class="muted small">Quick answers, no paid AI required</p></div><span class="insight-icon">✧</span></div><div class="assistant-questions"><button type="button" data-assistant-question="today">How is my attendance today?</button><button type="button" data-assistant-question="hours">How many hours have I logged?</button><button type="button" data-assistant-question="requests">Where can I check my requests?</button></div><div id="assistantAnswer" class="assistant-answer" aria-live="polite">Choose a question to get a quick answer based on your workspace data.</div></article>' +
+      '</section>' +
       '<div class="workspace-grid"><div>' +
       '<section class="card attendance-hero" id="attendance"><h2>Attendance</h2><p>Record your workday check-in and check-out.</p>' +
       '<div id="employeeProfile" class="hidden"></div>' +
@@ -480,6 +487,8 @@
       if (greeting) greeting.classList.toggle('hidden', pageId !== 'overview');
       const dailyBoost = document.getElementById('dailyBoost');
       if (dailyBoost) dailyBoost.classList.toggle('hidden', pageId !== 'overview');
+      const overviewTools = document.getElementById('overviewTools');
+      if (overviewTools) overviewTools.classList.toggle('hidden', pageId !== 'overview');
       document.querySelectorAll('.workspace-nav .nav-item[data-target]').forEach(function(item) {
         item.classList.toggle('active', item.getAttribute('data-target') === pageId);
       });
@@ -501,6 +510,9 @@
     setWorkspacePage('overview');
     loadHolidays();
     document.getElementById('checkBtn').addEventListener('click', verifyEmployee);
+    document.getElementById('dailyGoalForm').addEventListener('submit', saveEmployeeGoal);
+    document.getElementById('kudosForm').addEventListener('submit', submitTeamKudos);
+    document.querySelectorAll('[data-assistant-question]').forEach(function(btn){btn.addEventListener('click',function(){answerAttendanceQuestion(btn.dataset.assistantQuestion);});});
     document.getElementById('loginBtn').addEventListener('click', function(){ attendanceAction('login'); });
     document.getElementById('logoutBtn').addEventListener('click', function(){ attendanceAction('logout'); });
     document.getElementById('regDate').value = new Date().toLocaleDateString('en-CA', {timeZone: CONFIG.timeZone || 'Asia/Kolkata'});
@@ -563,7 +575,7 @@
         showMessage('empMessage', 'Signed in successfully. Your attendance status is up to date.', 'ok');
         updateButtons(record);
         updateWorkTimer(record);
-        await Promise.all([loadDepartmentMembers(), loadAttendanceHistory(), loadMyRequests(), loadWFHStatus(), loadLeaveStatus(), loadEmployeeNotifications()]);
+        await Promise.all([loadDepartmentMembers(), loadAttendanceHistory(), loadMyRequests(), loadWFHStatus(), loadLeaveStatus(), loadEmployeeNotifications(), loadEmployeeExtras()]);
       } catch (err) { showMessage('empMessage', err.message, 'error'); }
       finally { setBusy(false); }
     }
@@ -626,6 +638,89 @@
       employeeNotificationRefreshInFlight=true;
       loadEmployeeNotifications().finally(function(){employeeNotificationRefreshInFlight=false;});
     },30000);
+
+
+    let employeeExtrasLoading = false;
+    async function loadEmployeeExtras() {
+      if(!verifiedEmployee || employeeExtrasLoading)return;
+      employeeExtrasLoading=true;
+      try {
+        const today=new Date().toLocaleDateString('en-CA',{timeZone:CONFIG.timeZone||'Asia/Kolkata'});
+        const results=await Promise.all([
+          callServer('getDailyGoals',[verifiedEmployee.id,verifiedEmployee.pin,today]),
+          callServer('getTeamKudos',[verifiedEmployee.id,verifiedEmployee.pin]),
+          callServer('getEmployeeAttendanceHistory',[verifiedEmployee.id,verifiedEmployee.pin])
+        ]);
+        if(results[0] && results[0].ok) renderDailyGoals(results[0].goals||[]);
+        if(results[1] && results[1].ok) renderKudos(results[1]);
+        if(results[2] && results[2].ok) renderEmployeeStats(results[2].records||[]);
+      } catch(e) {
+        const answer=document.getElementById('assistantAnswer');
+        if(answer)answer.textContent='I could not refresh one of your workspace insights. Please try again.';
+      } finally { employeeExtrasLoading=false; }
+    }
+    function renderDailyGoals(goals) {
+      const target=document.getElementById('dailyGoalList'); if(!target)return;
+      const done=goals.filter(function(g){return g.done;}).length;
+      const fill=document.getElementById('goalProgressFill'), label=document.getElementById('goalProgressLabel');
+      if(fill)fill.style.width=(goals.length?Math.round(done/goals.length*100):0)+'%';
+      if(label)label.textContent=done+' / '+goals.length+' completed · '+goals.length+'/5 goals';
+      const input=document.getElementById('dailyGoalInput'); if(input)input.disabled=goals.length>=5;
+      const addButton=document.querySelector('#dailyGoalForm button[type="submit"]'); if(addButton)addButton.disabled=goals.length>=5;
+      target.innerHTML=goals.length?goals.map(function(g){return '<label class="goal-item '+(g.done?'done':'')+'"><input type="checkbox" data-goal-id="'+esc(g.id)+'" '+(g.done?'checked':'')+'><span>'+esc(g.text)+'</span></label>';}).join(''):'<div class="goal-empty">No goals yet. Add one small win for today.</div>';
+      target.querySelectorAll('[data-goal-id]').forEach(function(check){check.addEventListener('change',async function(){check.disabled=true;try{const r=await callServer('setDailyGoalDone',[verifiedEmployee.id,verifiedEmployee.pin,check.dataset.goalId,check.checked]);if(r.ok)await loadEmployeeExtras();else{check.checked=!check.checked;check.disabled=false;}}catch(e){check.checked=!check.checked;check.disabled=false;}});});
+    }
+    async function saveEmployeeGoal(ev) {
+      ev.preventDefault(); if(!verifiedEmployee)return showMessage('empMessage','Sign in before adding a daily goal.','error');
+      const input=document.getElementById('dailyGoalInput'),btn=ev.currentTarget.querySelector('button[type="submit"]'),value=input.value.trim();
+      if(!value)return;btn.disabled=true;
+      try{const r=await callServer('saveDailyGoal',[verifiedEmployee.id,verifiedEmployee.pin,value,new Date().toLocaleDateString('en-CA',{timeZone:CONFIG.timeZone||'Asia/Kolkata'})]);if(!r.ok){showMessage('empMessage',r.message||'Could not save goal.','error');return;}input.value='';await loadEmployeeExtras();}
+      catch(e){showMessage('empMessage',e.message||'Could not save goal.','error');}
+      finally{btn.disabled=false;}
+    }
+    function renderKudos(data) {
+      const select=document.getElementById('kudosRecipient'),list=document.getElementById('teamKudosList');if(!select||!list)return;
+      const current=select.value;
+      select.innerHTML='<option value="">Choose teammate</option>'+(data.employees||[]).filter(function(e){return String(e.id).toLowerCase()!==String(verifiedEmployee.id).toLowerCase();}).map(function(e){return '<option value="'+esc(e.id)+'">'+esc(e.name)+(e.department?' · '+esc(e.department):'')+'</option>';}).join('');
+      if(current)select.value=current;
+      const items=data.items||[];
+      list.innerHTML=items.length?items.slice(0,5).map(function(k){return '<div class="kudos-item"><strong>✦ '+esc(k.fromName)+' → '+esc(k.toName)+'</strong><p>'+esc(k.message)+'</p><div class="muted">'+esc(k.createdAt)+'</div></div>';}).join(''):'<div class="goal-empty">No kudos shared yet. Be the first to appreciate a teammate.</div>';
+    }
+    async function submitTeamKudos(ev) {
+      ev.preventDefault();if(!verifiedEmployee)return showMessage('kudosMessageStatus','Sign in before sending kudos.','error');
+      const form=ev.currentTarget,select=document.getElementById('kudosRecipient'),message=document.getElementById('kudosMessage'),status=document.getElementById('kudosMessageStatus'),btn=form.querySelector('button[type="submit"]');
+      if(!select.value||message.value.trim().length<5)return showMessage('kudosMessageStatus','Choose a teammate and write at least 5 characters.','error');
+      btn.disabled=true;
+      try{const r=await callServer('sendTeamKudos',[verifiedEmployee.id,verifiedEmployee.pin,select.value,message.value.trim()]);showMessage('kudosMessageStatus',r.message||'Kudos result received.',r.ok?'ok':'error');if(r.ok){message.value='';await Promise.all([loadEmployeeExtras(),loadEmployeeNotifications()]);}}
+      catch(e){showMessage('kudosMessageStatus',e.message||'Could not send kudos.','error');}
+      finally{btn.disabled=false;}
+    }
+    function renderEmployeeStats(records) {
+      const days=document.getElementById('myDaysPresent'),onTime=document.getElementById('myOnTimeDays'),hours=document.getElementById('myHoursTotal'),streak=document.getElementById('myStreak'),tip=document.getElementById('myAttendanceTip');
+      if(!days||!onTime||!hours)return;
+      const attended=records.filter(function(r){return !!r.loginTime;});
+      const last7=attended.slice(0,7),ontime=attended.filter(function(r){return !/late/i.test(r.status||'');});
+      const totalHours=attended.reduce(function(sum,r){return sum+(Number(r.hours)||0);},0);
+      days.textContent=String(attended.length);onTime.textContent=String(ontime.length);hours.textContent=totalHours.toFixed(1);
+      let run=0;for(let i=0;i<last7.length;i++){if(/late/i.test(last7[i].status||''))break;run++;}
+      streak.textContent=String(run);
+      if(tip)tip.textContent=attended.length?'Based on your latest '+records.length+' attendance records. Recent on-time run: '+run+' logged day(s).':'No attendance records found yet. Your stats will update after your first check-in.';
+      const answer=document.getElementById('assistantAnswer');if(answer)answer.dataset.hours=totalHours.toFixed(1);
+    }
+    function answerAttendanceQuestion(question) {
+      const answer=document.getElementById('assistantAnswer');if(!answer)return;
+      if(!verifiedEmployee){answer.textContent='Open My Space with your Employee ID and PIN first, then I can show your personal attendance information.';return;}
+      if(question==='today'){
+        const summary=document.getElementById('todaySummary');
+        answer.textContent=summary?summary.textContent:'Your attendance summary is not loaded yet.';
+      } else if(question==='hours') {
+        answer.textContent='You have '+(answer.dataset.hours||'0.0')+' hours logged across the recent attendance records shown in your workspace.';
+      } else if(question==='requests') {
+        setWorkspacePage('requests');answer.textContent='Your request history is available in My Requests. Leave and WFH request statuses are in their respective sections.';
+      }
+    }
+    // Refresh the employee self-service widgets while the signed-in tab remains open.
+    window.setInterval(function(){if(verifiedEmployee&&!document.hidden)loadEmployeeExtras();},60000);
 
     async function loadEmployeeNotifications() {
       const target=document.getElementById('employeeNotifications'); if(!target)return; if(!verifiedEmployee){target.innerHTML='<div class="notice">Sign in to view notifications.</div>';return;}
