@@ -26,6 +26,10 @@ const SHEET_WORK_SCHEDULES = 'Work_Schedules';
 const SHEET_WFH_REQUESTS = 'WFH_Requests';
 const SHEET_LEAVE_REQUESTS = 'Leave_Requests';
 const SHEET_NOTIFICATIONS = 'Notifications';
+const SHEET_DAILY_GOALS = 'Daily_Goals';
+const SHEET_KUDOS = 'Team_Kudos';
+const DAILY_GOAL_HEADERS = ['Goal ID', 'Date', 'Employee ID', 'Goal', 'Done', 'Created At', 'Completed At'];
+const KUDOS_HEADERS = ['Kudos ID', 'Created At', 'From Employee ID', 'From Name', 'To Employee ID', 'To Name', 'Message'];
 const LEAVE_REQUEST_HEADERS = ['Request ID', 'Submitted At', 'Employee ID', 'Employee Name', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Reason', 'Status', 'Reviewed At', 'Reviewed By', 'Admin Remarks'];
 const NOTIFICATION_HEADERS = ['Notification ID', 'Created At', 'Audience', 'Recipient ID', 'Title', 'Message', 'Read', 'Related ID'];
 const WORK_SCHEDULE_HEADERS = ['Date', 'Employee ID', 'Work Mode', 'Approved By', 'Approved At', 'Notes'];
@@ -111,6 +115,8 @@ function setup() {
   ensureSheet_(ss, SHEET_WFH_REQUESTS, WFH_REQUEST_HEADERS, []);
   ensureSheet_(ss, SHEET_LEAVE_REQUESTS, LEAVE_REQUEST_HEADERS, []);
   ensureSheet_(ss, SHEET_NOTIFICATIONS, NOTIFICATION_HEADERS, []);
+  ensureSheet_(ss, SHEET_DAILY_GOALS, DAILY_GOAL_HEADERS, []);
+  ensureSheet_(ss, SHEET_KUDOS, KUDOS_HEADERS, []);
   ensureSheet_(ss, SHEET_AUDIT, ['Timestamp', 'Actor', 'Event', 'Details'], []);
   ensureAttendanceModeColumns_();
   formatSheets_(ss);
@@ -140,6 +146,8 @@ function upgradeSchemaSafely_() {
   ensureSheet_(ss, SHEET_WFH_REQUESTS, WFH_REQUEST_HEADERS, []);
   ensureSheet_(ss, SHEET_LEAVE_REQUESTS, LEAVE_REQUEST_HEADERS, []);
   ensureSheet_(ss, SHEET_NOTIFICATIONS, NOTIFICATION_HEADERS, []);
+  ensureSheet_(ss, SHEET_DAILY_GOALS, DAILY_GOAL_HEADERS, []);
+  ensureSheet_(ss, SHEET_KUDOS, KUDOS_HEADERS, []);
   ensureAttendanceModeColumns_();
   if (!ss.getSheetByName(SHEET_AUDIT)) { const audit = ss.insertSheet(SHEET_AUDIT); audit.getRange(1,1,1,4).setValues([['Timestamp','Actor','Event','Details']]).setFontWeight('bold').setBackground('#EEF2FF'); audit.setFrozenRows(1); }
   SpreadsheetApp.getUi().alert('Safe schema upgrade completed. Existing records were not deleted or cleared.\nSet Admin Email in Settings before using OTP recovery.');
@@ -189,6 +197,8 @@ function getRequiredSheet_(name) {
     // Self-heal this additive support tab if an older deployment missed setup().
     sheet = ensureSheet_(ss, SHEET_NOTIFICATIONS, NOTIFICATION_HEADERS, []);
   }
+  if (!sheet && name === SHEET_DAILY_GOALS) sheet = ensureSheet_(ss, SHEET_DAILY_GOALS, DAILY_GOAL_HEADERS, []);
+  if (!sheet && name === SHEET_KUDOS) sheet = ensureSheet_(ss, SHEET_KUDOS, KUDOS_HEADERS, []);
   if (!sheet) throw new Error('Sheet "' + name + '" is missing. Open the linked spreadsheet > Extensions > Apps Script, run setup(), then deploy a new version.');
   return sheet;
 }
@@ -1291,6 +1301,96 @@ function markAdminNotificationRead(token, notificationId) {
     for(let i=1;i<values.length;i++) if(clean_(values[i][0])===clean_(notificationId) && clean_(values[i][2])==='Admin') { sheet.getRange(i+1,7).setValue('Yes'); return {ok:true}; }
     return {ok:false,message:'Notification not found.'};
   } catch(err) { return {ok:false,message:err.message || 'Could not update notification.'}; }
+}
+
+
+/** Employee self-service daily goals. PIN is verified server-side for every mutation/read. */
+function getDailyGoals(employeeId, pin, date) {
+  try {
+    const employee = findEmployee_(employeeId);
+    if (!employee || String(employee.status).toLowerCase() === 'inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings = getSettingsSafe_();
+    if (settings.requirePin && clean_(pin) !== employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const day = /^\\d{4}-\\d{2}-\\d{2}$/.test(clean_(date)) ? clean_(date) : today_();
+    const values = getRequiredSheet_(SHEET_DAILY_GOALS).getDataRange().getDisplayValues();
+    const goals = [];
+    for (let i=1;i<values.length;i++) {
+      const r=values[i];
+      if (clean_(r[1])===day && clean_(r[2]).toLowerCase()===employee.id.toLowerCase()) goals.push({id:r[0],date:r[1],text:r[3],done:clean_(r[4])==='Yes',createdAt:r[5],completedAt:r[6]});
+    }
+    return {ok:true,date:day,goals:goals};
+  } catch(err) { return {ok:false,message:err.message || 'Could not load daily goals.'}; }
+}
+
+function saveDailyGoal(employeeId, pin, goalText, date) {
+  const lock=LockService.getScriptLock();
+  try {
+    const employee=findEmployee_(employeeId);
+    if (!employee || String(employee.status).toLowerCase()==='inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings=getSettingsSafe_();
+    if (settings.requirePin && clean_(pin)!==employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const day=clean_(date) || today_(), goal=clean_(goalText);
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(day) || day!==today_()) return {ok:false,message:'Goals can only be added for today.'};
+    if (!goal || goal.length<3 || goal.length>160) return {ok:false,message:'Enter a goal between 3 and 160 characters.'};
+    lock.waitLock(10000);
+    const sheet=getRequiredSheet_(SHEET_DAILY_GOALS), values=sheet.getDataRange().getDisplayValues();
+    let count=0;
+    for(let i=1;i<values.length;i++) if(clean_(values[i][1])===day && clean_(values[i][2]).toLowerCase()===employee.id.toLowerCase()) count++;
+    if(count>=5) return {ok:false,message:'You can add up to 5 goals per day.'};
+    const id='GOAL-'+Utilities.getUuid().slice(0,10).toUpperCase();
+    sheet.appendRow([id,day,employee.id,goal,'No',timestamp_(),'']);
+    return {ok:true,message:'Daily goal added.',id:id};
+  } catch(err) { return {ok:false,message:err.message || 'Could not save goal.'}; }
+  finally { try {lock.releaseLock();} catch(e) {} }
+}
+
+function setDailyGoalDone(employeeId, pin, goalId, done) {
+  try {
+    const employee=findEmployee_(employeeId);
+    if (!employee || String(employee.status).toLowerCase()==='inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings=getSettingsSafe_();
+    if (settings.requirePin && clean_(pin)!==employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const sheet=getRequiredSheet_(SHEET_DAILY_GOALS), values=sheet.getDataRange().getDisplayValues();
+    for(let i=1;i<values.length;i++) {
+      if(clean_(values[i][0])!==clean_(goalId) || clean_(values[i][2]).toLowerCase()!==employee.id.toLowerCase()) continue;
+      sheet.getRange(i+1,5).setValue(done ? 'Yes' : 'No');
+      sheet.getRange(i+1,7).setValue(done ? timestamp_() : '');
+      return {ok:true};
+    }
+    return {ok:false,message:'Goal not found.'};
+  } catch(err) { return {ok:false,message:err.message || 'Could not update goal.'}; }
+}
+
+/** Lightweight peer recognition. Employees can only post as themselves; target must be active. */
+function sendTeamKudos(fromEmployeeId, pin, toEmployeeId, message) {
+  try {
+    const from=findEmployee_(fromEmployeeId), to=findEmployee_(toEmployeeId), settings=getSettingsSafe_();
+    if(!from || String(from.status).toLowerCase()==='inactive') return {ok:false,message:'Your employee account was not found or is inactive.'};
+    if(settings.requirePin && clean_(pin)!==from.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    if(!to || String(to.status).toLowerCase()==='inactive') return {ok:false,message:'Choose an active team member.'};
+    const note=clean_(message);
+    if(!note || note.length<5 || note.length>240) return {ok:false,message:'Appreciation message must be 5–240 characters.'};
+    const sheet=getRequiredSheet_(SHEET_KUDOS), id='KUDOS-'+Utilities.getUuid().slice(0,10).toUpperCase();
+    sheet.appendRow([id,timestamp_(),from.id,from.name,to.id,to.name,note]);
+    createNotification_('Employee',to.id,'You received kudos',from.name+' appreciated you: '+note,id);
+    return {ok:true,message:'Kudos shared with your teammate.'};
+  } catch(err) { return {ok:false,message:err.message || 'Could not send kudos.'}; }
+}
+
+function getTeamKudos(employeeId, pin) {
+  try {
+    const employee=findEmployee_(employeeId);
+    if(!employee || String(employee.status).toLowerCase()==='inactive') return {ok:false,message:'Employee not found or inactive.'};
+    const settings=getSettingsSafe_();
+    if(settings.requirePin && clean_(pin)!==employee.pin) return {ok:false,message:'Incorrect employee PIN.'};
+    const values=getRequiredSheet_(SHEET_KUDOS).getDataRange().getDisplayValues(), items=[];
+    for(let i=1;i<values.length;i++) {
+      const r=values[i]; if(!clean_(r[0])) continue;
+      items.push({id:r[0],createdAt:r[1],fromId:r[2],fromName:r[3],toId:r[4],toName:r[5],message:r[6]});
+    }
+    items.reverse();
+    return {ok:true,items:items.slice(0,20),employees:readEmployees_().filter(function(e){return String(e.status).toLowerCase()!=='inactive';}).map(function(e){return {id:e.id,name:e.name,department:e.department};})};
+  } catch(err) { return {ok:false,message:err.message || 'Could not load team kudos.'}; }
 }
 
 /** Friendly-name alias for editors where the trailing-underscore function is hard to locate. */
